@@ -1,0 +1,24 @@
+.print-body { background: #eef2f7; }
+.print-shell { width: min(1120px, 100%); margin: 0 auto; padding: 24px 18px 40px; display: grid; gap: 20px; }
+.print-toolbar { display: flex; gap: 12px; justify-content: flex-end; }
+.report-card-sheet { background: #fff; border: 1px solid rgba(15, 23, 42, 0.08); border-radius: 24px; padding: 28px; box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08); page-break-after: always; }
+.report-card-head { display: flex; justify-content: space-between; gap: 18px; padding-bottom: 18px; border-bottom: 2px solid rgba(30, 64, 175, 0.14); }
+.report-card-brand { display: flex; gap: 14px; align-items: center; }
+.report-card-brand img { width: 72px; height: 72px; object-fit: contain; }
+.report-card-brand h1 { font-size: 24px; }
+.report-card-brand p, .report-card-meta div, .summary-note { color: var(--muted); font-size: 13px; }
+.report-card-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 18px; padding: 16px 0 18px; }
+.report-card-table-wrap { overflow: visible; }
+.report-card-table th, .report-card-table td { text-align: center; }
+.report-card-table th:first-child, .report-card-table td:first-child { text-align: left; }
+.report-card-table .table-note { font-size: 10px; color: rgba(255,255,255,.78); }
+.is-absent { color: var(--danger); font-weight: 600; }
+.grand-row td { background: rgba(37, 99, 235, 0.08); font-weight: 600; }
+.report-card-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 18px; }
+.summary-box { border: 1px solid var(--border); border-radius: 18px; padding: 16px 18px; background: rgba(255,255,255,0.76); display: grid; gap: 6px; }
+.summary-label { font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+.report-card-signatures { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 26px; margin-top: 28px; }
+.report-card-signatures span { display: block; border-top: 1px solid #334155; margin-bottom: 8px; }
+.report-card-signatures p { text-align: center; color: var(--muted); font-size: 13px; }
+@media print { .no-print { display: none !important; } .print-body { background: #fff; } .print-shell { padding: 0; } .report-card-sheet { box-shadow: none; border: none; border-radius: 0; margin: 0; page-break-after: always; } }
+@media (max-width: 720px) { .report-card-head, .report-card-grid, .report-card-summary, .report-card-signatures { grid-template-columns: 1fr; display: grid; } .report-card-head { display: grid; } }

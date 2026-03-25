@@ -1,0 +1,2 @@
+.profile-panel { padding: 28px 24px; text-align: center; }
+.profile-avatar { width: 86px; height: 86px; margin: 0 auto 14px; border-radius: 999px; display: grid; place-items: center; background: linear-gradient(135deg, var(--faculty), #14b8a6); color: #fff; font-family: 'Cinzel', serif; font-size: 32px; }
