@@ -4,6 +4,9 @@ declare(strict_types=1);
 require_once __DIR__ . '/../app/bootstrap.php';
 require_role('admin');
 
+$redirectQuery = trim((string) ($_SERVER['QUERY_STRING'] ?? ''));
+$redirectUrl = 'admin/assignments.php' . ($redirectQuery !== '' ? '?' . $redirectQuery : '');
+
 if (is_post() && (string) post('action') === 'delete_assignment') {
     try {
         execute_sql('DELETE FROM assignments WHERE id = :id', ['id' => (int) post('assignment_id')]);
@@ -13,7 +16,7 @@ if (is_post() && (string) post('action') === 'delete_assignment') {
         flash_exception($exception);
     }
 
-    redirect_to('admin/assignments.php');
+    redirect_to($redirectUrl);
 }
 
 $departments = departments();
@@ -21,48 +24,133 @@ $departmentId = (int) ($_GET['department_id'] ?? 0);
 $semesterNo = (int) ($_GET['semester_no'] ?? 0);
 $subjectId = (int) ($_GET['subject_id'] ?? 0);
 $assignmentLabel = trim((string) ($_GET['assignment_label'] ?? ''));
+$submissionStatus = trim((string) ($_GET['submission_status'] ?? ''));
+$search = trim((string) ($_GET['search'] ?? ''));
+
+if (!in_array($submissionStatus, ['', 'submitted', 'pending'], true)) {
+    $submissionStatus = '';
+}
 
 $subjectOptions = $departmentId > 0
-    ? query_all('SELECT * FROM subjects WHERE department_id = :department_id ORDER BY semester_no, subject_name', ['department_id' => $departmentId])
-    : [];
+    ? query_all(
+        'SELECT s.*, d.short_name AS department_short_name
+         FROM subjects s
+         INNER JOIN departments d ON d.id = s.department_id
+         WHERE s.department_id = :department_id
+         ORDER BY s.semester_no, s.subject_name',
+        ['department_id' => $departmentId]
+    )
+    : query_all(
+        'SELECT s.*, d.short_name AS department_short_name
+         FROM subjects s
+         INNER JOIN departments d ON d.id = s.department_id
+         ORDER BY d.name, s.semester_no, s.subject_name'
+    );
 
-$sql = 'SELECT a.*, d.name AS department_name, s.subject_name, t.full_name AS teacher_name,
-               SUM(CASE WHEN asb.submission_status = "submitted" THEN 1 ELSE 0 END) AS submitted_count
-        FROM assignments a
-        INNER JOIN departments d ON d.id = a.department_id
-        INNER JOIN subjects s ON s.id = a.subject_id
-        INNER JOIN teachers t ON t.id = a.teacher_id
-        LEFT JOIN assignment_submissions asb ON asb.assignment_id = a.id
-        WHERE a.academic_year_id = :academic_year_id';
-$params = ['academic_year_id' => current_academic_year_id()];
+$summarySql = 'SELECT a.*, d.name AS department_name, s.subject_name, t.full_name AS teacher_name,
+                      COALESCE(sc.total_students, 0) AS total_students,
+                      SUM(CASE WHEN asb.submission_status = "submitted" THEN 1 ELSE 0 END) AS submitted_count
+               FROM assignments a
+               INNER JOIN departments d ON d.id = a.department_id
+               INNER JOIN subjects s ON s.id = a.subject_id
+               INNER JOIN teachers t ON t.id = a.teacher_id
+               LEFT JOIN assignment_submissions asb ON asb.assignment_id = a.id
+               LEFT JOIN (
+                    SELECT department_id, semester_no, COUNT(*) AS total_students
+                    FROM students
+                    GROUP BY department_id, semester_no
+               ) sc ON sc.department_id = a.department_id AND sc.semester_no = a.semester_no
+               WHERE a.academic_year_id = :academic_year_id';
+$summaryParams = ['academic_year_id' => current_academic_year_id()];
 
 if ($departmentId > 0) {
-    $sql .= ' AND a.department_id = :department_id';
-    $params['department_id'] = $departmentId;
+    $summarySql .= ' AND a.department_id = :department_id';
+    $summaryParams['department_id'] = $departmentId;
 }
 if ($semesterNo > 0) {
-    $sql .= ' AND a.semester_no = :semester_no';
-    $params['semester_no'] = $semesterNo;
+    $summarySql .= ' AND a.semester_no = :semester_no';
+    $summaryParams['semester_no'] = $semesterNo;
 }
 if ($subjectId > 0) {
-    $sql .= ' AND a.subject_id = :subject_id';
-    $params['subject_id'] = $subjectId;
+    $summarySql .= ' AND a.subject_id = :subject_id';
+    $summaryParams['subject_id'] = $subjectId;
 }
 if ($assignmentLabel !== '') {
-    $sql .= ' AND a.assignment_label = :assignment_label';
-    $params['assignment_label'] = $assignmentLabel;
+    $summarySql .= ' AND a.assignment_label = :assignment_label';
+    $summaryParams['assignment_label'] = $assignmentLabel;
 }
 
-$sql .= ' GROUP BY a.id, d.name, s.subject_name, t.full_name ORDER BY d.name, a.semester_no, s.subject_name';
-$rows = query_all($sql, $params);
+$summarySql .= ' GROUP BY a.id, d.name, s.subject_name, t.full_name, sc.total_students
+                 ORDER BY d.name, a.semester_no, s.subject_name, a.assignment_label';
+$assignmentRows = query_all($summarySql, $summaryParams);
 
-render_dashboard_layout('Assignment Oversight', 'admin', 'assignments', 'admin/assignments.css', 'admin/assignments.js', function () use ($departments, $departmentId, $semesterNo, $subjectId, $assignmentLabel, $subjectOptions, $rows): void {
+$detailSql = 'SELECT a.id AS assignment_id,
+                     a.assignment_label,
+                     a.due_date,
+                     a.notes,
+                     a.semester_no,
+                     d.name AS department_name,
+                     s.subject_name,
+                     t.full_name AS teacher_name,
+                     st.id AS student_id,
+                     st.full_name AS student_name,
+                     st.enrollment_no,
+                     st.year_level,
+                     st.email,
+                     COALESCE(asb.submission_status, "pending") AS submission_status,
+                     asb.submitted_at
+              FROM assignments a
+              INNER JOIN departments d ON d.id = a.department_id
+              INNER JOIN subjects s ON s.id = a.subject_id
+              INNER JOIN teachers t ON t.id = a.teacher_id
+              INNER JOIN students st ON st.department_id = a.department_id AND st.semester_no = a.semester_no
+              LEFT JOIN assignment_submissions asb ON asb.assignment_id = a.id AND asb.student_id = st.id
+              WHERE a.academic_year_id = :academic_year_id';
+$detailParams = ['academic_year_id' => current_academic_year_id()];
+
+if ($departmentId > 0) {
+    $detailSql .= ' AND a.department_id = :department_id';
+    $detailParams['department_id'] = $departmentId;
+}
+if ($semesterNo > 0) {
+    $detailSql .= ' AND a.semester_no = :semester_no';
+    $detailParams['semester_no'] = $semesterNo;
+}
+if ($subjectId > 0) {
+    $detailSql .= ' AND a.subject_id = :subject_id';
+    $detailParams['subject_id'] = $subjectId;
+}
+if ($assignmentLabel !== '') {
+    $detailSql .= ' AND a.assignment_label = :assignment_label';
+    $detailParams['assignment_label'] = $assignmentLabel;
+}
+if ($submissionStatus !== '') {
+    $detailSql .= ' AND COALESCE(asb.submission_status, "pending") = :submission_status';
+    $detailParams['submission_status'] = $submissionStatus;
+}
+if ($search !== '') {
+    $detailSql .= ' AND (st.full_name LIKE :search OR st.enrollment_no LIKE :search OR COALESCE(st.email, "") LIKE :search)';
+    $detailParams['search'] = '%' . $search . '%';
+}
+
+$detailSql .= ' ORDER BY d.name, a.semester_no, s.subject_name, a.assignment_label, st.full_name';
+$submissionRows = query_all($detailSql, $detailParams);
+
+$submittedTotal = 0;
+foreach ($submissionRows as $row) {
+    if (($row['submission_status'] ?? 'pending') === 'submitted') {
+        $submittedTotal++;
+    }
+}
+$pendingTotal = max(count($submissionRows) - $submittedTotal, 0);
+
+render_dashboard_layout('Assignment Oversight', 'admin', 'assignments', 'admin/assignments.css', 'admin/assignments.js', function () use ($departments, $departmentId, $semesterNo, $subjectId, $assignmentLabel, $submissionStatus, $search, $subjectOptions, $assignmentRows, $submissionRows, $submittedTotal, $pendingTotal): void {
     ?>
     <article class="data-card">
         <div class="card-head">
             <div>
                 <p class="eyebrow">Submission Filters</p>
-                <h3 class="card-title">Review assignment completion by class</h3>
+                <h3 class="card-title">Review assignment completion student-wise</h3>
             </div>
         </div>
         <form method="get" class="filters">
@@ -88,8 +176,12 @@ render_dashboard_layout('Assignment Oversight', 'admin', 'assignments', 'admin/a
                 <label class="form-label" for="assignment-subject">Subject</label>
                 <select class="form-select" id="assignment-subject" name="subject_id">
                     <option value="0">All subjects</option>
-                    <?php foreach ($subjectOptions as $subject): ?>
-                        <option value="<?= e((string) $subject['id']) ?>" <?= $subjectId === (int) $subject['id'] ? 'selected' : '' ?>><?= e($subject['subject_name']) ?></option>
+                    <?php foreach ($subjectOptions as $subject):
+                        $subjectLabel = $departmentId > 0
+                            ? $subject['subject_name']
+                            : ($subject['department_short_name'] . ' - ' . $subject['subject_name'] . ' (' . semester_label((int) $subject['semester_no']) . ')');
+                        ?>
+                        <option value="<?= e((string) $subject['id']) ?>" <?= $subjectId === (int) $subject['id'] ? 'selected' : '' ?>><?= e($subjectLabel) ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -102,18 +194,48 @@ render_dashboard_layout('Assignment Oversight', 'admin', 'assignments', 'admin/a
                     <?php endforeach; ?>
                 </select>
             </div>
+            <div class="form-group">
+                <label class="form-label" for="submission-status">Submission Status</label>
+                <select class="form-select" id="submission-status" name="submission_status">
+                    <option value="">All students</option>
+                    <option value="submitted" <?= $submissionStatus === 'submitted' ? 'selected' : '' ?>>Submitted</option>
+                    <option value="pending" <?= $submissionStatus === 'pending' ? 'selected' : '' ?>>Pending</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="assignment-search">Student Search</label>
+                <input class="search-input" id="assignment-search" name="search" value="<?= e($search) ?>" placeholder="Name, enrollment, or email">
+            </div>
             <button class="btn-primary" type="submit">Apply Filters</button>
         </form>
     </article>
+
+    <section class="stats-grid">
+        <article class="stat-card">
+            <p class="eyebrow">Student Rows</p>
+            <h3 class="stat-value"><?= e((string) count($submissionRows)) ?></h3>
+            <p class="stat-label">Assignment-student records in the current filter</p>
+        </article>
+        <article class="stat-card">
+            <p class="eyebrow">Submitted</p>
+            <h3 class="stat-value"><?= e((string) $submittedTotal) ?></h3>
+            <p class="stat-label">Students who submitted the selected assignments</p>
+        </article>
+        <article class="stat-card">
+            <p class="eyebrow">Pending</p>
+            <h3 class="stat-value"><?= e((string) $pendingTotal) ?></h3>
+            <p class="stat-label">Students still pending submission</p>
+        </article>
+    </section>
 
     <article class="data-card">
         <div class="card-head">
             <div>
                 <p class="eyebrow">Assignment Register</p>
-                <h3 class="card-title">Submission status by assignment</h3>
+                <h3 class="card-title">Assignment-level summary</h3>
             </div>
         </div>
-        <?php if ($rows): ?>
+        <?php if ($assignmentRows): ?>
             <div class="table-wrap">
                 <table>
                     <thead>
@@ -129,13 +251,9 @@ render_dashboard_layout('Assignment Oversight', 'admin', 'assignments', 'admin/a
                     </tr>
                     </thead>
                     <tbody>
-                    <?php foreach ($rows as $row):
-                        $totalStudents = (int) query_value(
-                            'SELECT COUNT(*) FROM students WHERE department_id = :department_id AND semester_no = :semester_no',
-                            ['department_id' => $row['department_id'], 'semester_no' => $row['semester_no']]
-                        );
+                    <?php foreach ($assignmentRows as $row):
                         $submitted = (int) $row['submitted_count'];
-                        $pending = max($totalStudents - $submitted, 0);
+                        $pending = max((int) $row['total_students'] - $submitted, 0);
                         ?>
                         <tr>
                             <td><?= e($row['department_name']) ?></td>
@@ -158,10 +276,59 @@ render_dashboard_layout('Assignment Oversight', 'admin', 'assignments', 'admin/a
                 </table>
             </div>
         <?php else: ?>
-            <div class="empty-state">No assignment tracking records match the selected filters.</div>
+            <div class="empty-state">No assignment tracking records match the selected class filters.</div>
+        <?php endif; ?>
+    </article>
+
+    <article class="data-card">
+        <div class="card-head">
+            <div>
+                <p class="eyebrow">Student Submission Register</p>
+                <h3 class="card-title">All students with assignment submission status</h3>
+            </div>
+        </div>
+        <?php if ($submissionRows): ?>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Department</th>
+                        <th>Semester</th>
+                        <th>Subject</th>
+                        <th>Assignment</th>
+                        <th>Student</th>
+                        <th>Enrollment</th>
+                        <th>Year</th>
+                        <th>Email</th>
+                        <th>Faculty</th>
+                        <th>Status</th>
+                        <th>Submitted At</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <?php foreach ($submissionRows as $row):
+                        $isSubmitted = ($row['submission_status'] ?? 'pending') === 'submitted';
+                        ?>
+                        <tr>
+                            <td><?= e($row['department_name']) ?></td>
+                            <td><?= e(semester_label((int) $row['semester_no'])) ?></td>
+                            <td><?= e($row['subject_name']) ?></td>
+                            <td><span class="badge info"><?= e($row['assignment_label']) ?></span></td>
+                            <td><?= e($row['student_name']) ?></td>
+                            <td class="mono"><?= e($row['enrollment_no']) ?></td>
+                            <td><?= e(year_label((int) $row['year_level'])) ?></td>
+                            <td><?= e((string) ($row['email'] ?: '-')) ?></td>
+                            <td><?= e($row['teacher_name']) ?></td>
+                            <td><span class="badge <?= $isSubmitted ? 'success' : 'warning' ?>"><?= e($isSubmitted ? 'Submitted' : 'Pending') ?></span></td>
+                            <td><?= e((string) ($row['submitted_at'] ?: '-')) ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php else: ?>
+            <div class="empty-state">No student submission records match the selected filters.</div>
         <?php endif; ?>
     </article>
     <?php
 });
-
-

@@ -475,53 +475,135 @@ function upsert_attendance_sheet(int $teacherId, int $departmentId, int $yearLev
     }
 }
 
-function attendance_session_detail(int $departmentId, int $yearLevel, int $semesterNo, string $date): ?array
+function attendance_scope_student_rows(?int $departmentId, int $yearLevel, int $semesterNo): array
 {
-    $session = query_one(
-        'SELECT ats.*, t.full_name AS teacher_name
-         FROM attendance_sessions ats
-         INNER JOIN teachers t ON t.id = ats.teacher_id
-         WHERE ats.academic_year_id = :academic_year_id AND ats.department_id = :department_id AND ats.year_level = :year_level AND ats.semester_no = :semester_no AND ats.attendance_date = :attendance_date',
-        [
-            'academic_year_id' => current_academic_year_id(),
-            'department_id' => $departmentId,
-            'year_level' => $yearLevel,
-            'semester_no' => $semesterNo,
-            'attendance_date' => $date,
-        ]
-    );
+    $params = ['year_level' => $yearLevel, 'semester_no' => $semesterNo];
+    $sql = 'SELECT s.*, d.name AS department_name, d.short_name AS department_short_name
+            FROM students s
+            INNER JOIN departments d ON d.id = s.department_id
+            WHERE s.year_level = :year_level AND s.semester_no = :semester_no';
 
-    if (!$session) {
+    if ($departmentId !== null) {
+        $sql .= ' AND s.department_id = :department_id';
+        $params['department_id'] = $departmentId;
+    }
+
+    $sql .= ' ORDER BY d.name ASC, s.full_name ASC';
+
+    return query_all($sql, $params);
+}
+
+function upsert_attendance_scope(int $teacherId, ?int $departmentId, int $yearLevel, int $semesterNo, string $date, array $statuses, ?string $remarks = null): void
+{
+    if ($departmentId !== null) {
+        upsert_attendance_sheet($teacherId, $departmentId, $yearLevel, $semesterNo, $date, $statuses, $remarks);
+        return;
+    }
+
+    if ($statuses === []) {
+        return;
+    }
+
+    $groupedStatuses = [];
+    foreach (attendance_scope_student_rows(null, $yearLevel, $semesterNo) as $student) {
+        $studentId = (int) $student['id'];
+        if (!array_key_exists($studentId, $statuses)) {
+            continue;
+        }
+
+        $groupedStatuses[(int) $student['department_id']][$studentId] = $statuses[$studentId] === 'P' ? 'P' : 'A';
+    }
+
+    foreach ($groupedStatuses as $groupDepartmentId => $departmentStatuses) {
+        upsert_attendance_sheet($teacherId, (int) $groupDepartmentId, $yearLevel, $semesterNo, $date, $departmentStatuses, $remarks);
+    }
+}
+
+function attendance_scope_detail(?int $departmentId, int $yearLevel, int $semesterNo, string $date): ?array
+{
+    $params = [
+        'academic_year_id' => current_academic_year_id(),
+        'year_level' => $yearLevel,
+        'semester_no' => $semesterNo,
+        'attendance_date' => $date,
+    ];
+
+    $sessionSql = 'SELECT ats.*, t.full_name AS teacher_name, d.name AS department_name
+                   FROM attendance_sessions ats
+                   INNER JOIN teachers t ON t.id = ats.teacher_id
+                   INNER JOIN departments d ON d.id = ats.department_id
+                   WHERE ats.academic_year_id = :academic_year_id AND ats.year_level = :year_level AND ats.semester_no = :semester_no AND ats.attendance_date = :attendance_date';
+
+    if ($departmentId !== null) {
+        $sessionSql .= ' AND ats.department_id = :department_id';
+        $params['department_id'] = $departmentId;
+    }
+
+    $sessionSql .= ' ORDER BY d.name ASC, ats.id ASC';
+    $sessions = query_all($sessionSql, $params);
+
+    if (!$sessions) {
         return null;
     }
 
-    $session['records'] = query_all(
-        'SELECT ar.student_id, ar.status, s.full_name, s.enrollment_no
-         FROM attendance_records ar
-         INNER JOIN students s ON s.id = ar.student_id
-         WHERE ar.attendance_session_id = :attendance_session_id
-         ORDER BY s.full_name',
-        ['attendance_session_id' => $session['id']]
-    );
+    $recordSql = 'SELECT ar.student_id, ar.status, s.full_name, s.enrollment_no, s.department_id, d.name AS department_name
+                  FROM attendance_records ar
+                  INNER JOIN attendance_sessions ats ON ats.id = ar.attendance_session_id
+                  INNER JOIN students s ON s.id = ar.student_id
+                  INNER JOIN departments d ON d.id = s.department_id
+                  WHERE ats.academic_year_id = :academic_year_id AND ats.year_level = :year_level AND ats.semester_no = :semester_no AND ats.attendance_date = :attendance_date';
 
-    return $session;
+    if ($departmentId !== null) {
+        $recordSql .= ' AND ats.department_id = :department_id';
+    }
+
+    $recordSql .= ' ORDER BY d.name ASC, s.full_name ASC';
+    $records = query_all($recordSql, $params);
+
+    $remarks = array_values(array_filter(array_unique(array_map(
+        static fn (array $row): string => trim((string) ($row['remarks'] ?? '')),
+        $sessions
+    ))));
+
+    return [
+        'sessions' => $sessions,
+        'records' => $records,
+        'remarks' => count($remarks) === 1 ? $remarks[0] : '',
+        'session_count' => count($sessions),
+    ];
+}
+
+function attendance_session_detail(int $departmentId, int $yearLevel, int $semesterNo, string $date): ?array
+{
+    return attendance_scope_detail($departmentId, $yearLevel, $semesterNo, $date);
+}
+
+function attendance_history_rows(?int $departmentId = null): array
+{
+    $params = ['academic_year_id' => current_academic_year_id()];
+    $sql = 'SELECT ats.*, t.full_name AS teacher_name, d.name AS department_name,
+                   SUM(CASE WHEN ar.status = "P" THEN 1 ELSE 0 END) AS present_count,
+                   SUM(CASE WHEN ar.status = "A" THEN 1 ELSE 0 END) AS absent_count,
+                   COUNT(ar.id) AS total_count
+            FROM attendance_sessions ats
+            INNER JOIN teachers t ON t.id = ats.teacher_id
+            INNER JOIN departments d ON d.id = ats.department_id
+            LEFT JOIN attendance_records ar ON ar.attendance_session_id = ats.id
+            WHERE ats.academic_year_id = :academic_year_id';
+
+    if ($departmentId !== null) {
+        $sql .= ' AND ats.department_id = :department_id';
+        $params['department_id'] = $departmentId;
+    }
+
+    $sql .= ' GROUP BY ats.id, t.full_name, d.name ORDER BY ats.attendance_date DESC, d.name ASC';
+
+    return query_all($sql, $params);
 }
 
 function attendance_history_for_department(int $departmentId): array
 {
-    return query_all(
-        'SELECT ats.*, t.full_name AS teacher_name,
-                SUM(CASE WHEN ar.status = "P" THEN 1 ELSE 0 END) AS present_count,
-                SUM(CASE WHEN ar.status = "A" THEN 1 ELSE 0 END) AS absent_count,
-                COUNT(ar.id) AS total_count
-         FROM attendance_sessions ats
-         INNER JOIN teachers t ON t.id = ats.teacher_id
-         LEFT JOIN attendance_records ar ON ar.attendance_session_id = ats.id
-         WHERE ats.academic_year_id = :academic_year_id AND ats.department_id = :department_id
-         GROUP BY ats.id, t.full_name
-         ORDER BY ats.attendance_date DESC',
-        ['academic_year_id' => current_academic_year_id(), 'department_id' => $departmentId]
-    );
+    return attendance_history_rows($departmentId);
 }
 
 function save_mark_upload(int $teacherId, int $departmentId, int $semesterNo, int $subjectId, string $examType, float $maxMarks, array $records): void

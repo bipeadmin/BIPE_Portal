@@ -5,7 +5,29 @@ require_once __DIR__ . '/../app/bootstrap.php';
 require_role('teacher');
 
 $teacher = teacher_by_id((int) current_user()['id']);
-$departmentId = (int) ($teacher['department_id'] ?? 0);
+$departments = departments();
+$departmentLookup = [];
+foreach ($departments as $department) {
+    $departmentLookup[(int) $department['id']] = $department;
+}
+
+$defaultDepartmentId = (int) ($teacher['department_id'] ?? 0);
+if (!isset($departmentLookup[$defaultDepartmentId]) && $departments) {
+    $defaultDepartmentId = (int) $departments[0]['id'];
+}
+
+$departmentFilter = (string) (post('department_id') ?: ($_GET['department_id'] ?? (string) $defaultDepartmentId));
+$allDepartmentsMode = strtolower(trim($departmentFilter)) === 'all';
+$departmentId = $allDepartmentsMode ? null : (int) $departmentFilter;
+if (!$allDepartmentsMode && !isset($departmentLookup[(int) $departmentId])) {
+    $departmentId = $defaultDepartmentId;
+}
+
+$selectedDepartment = $allDepartmentsMode
+    ? ['name' => 'All Students']
+    : ($departmentLookup[(int) $departmentId] ?? ['name' => ($teacher['department_name'] ?? 'Department')]);
+$departmentQueryValue = $allDepartmentsMode ? 'all' : (string) $departmentId;
+
 $yearLevel = (int) (post('year_level') ?: ($_GET['year_level'] ?? 1));
 $semesterNo = (int) (post('semester_no') ?: ($_GET['semester_no'] ?? ($yearLevel * 2)));
 $attendanceDate = (string) (post('attendance_date') ?: ($_GET['attendance_date'] ?? date('Y-m-d')));
@@ -19,8 +41,8 @@ if (is_post()) {
             foreach ((array) post('status', []) as $studentId => $status) {
                 $statuses[(int) $studentId] = $status === 'P' ? 'P' : 'A';
             }
-            upsert_attendance_sheet((int) $teacher['id'], $departmentId, $yearLevel, $semesterNo, $attendanceDate, $statuses, trim((string) post('remarks')) ?: null);
-            audit_log('teacher', (string) ($teacher['teacher_code'] ?? ('teacher#' . $teacher['id'])), 'ATTENDANCE_UPDATED', 'Updated attendance for semester ' . $semesterNo . ' on ' . $attendanceDate);
+            upsert_attendance_scope((int) $teacher['id'], $departmentId, $yearLevel, $semesterNo, $attendanceDate, $statuses, trim((string) post('remarks')) ?: null);
+            audit_log('teacher', (string) ($teacher['teacher_code'] ?? ('teacher#' . $teacher['id'])), 'ATTENDANCE_UPDATED', 'Updated attendance for ' . ($selectedDepartment['name'] ?? 'selected scope') . ', semester ' . $semesterNo . ' on ' . $attendanceDate);
             flash('success', 'Attendance record updated successfully.');
         }
 
@@ -33,25 +55,22 @@ if (is_post()) {
         flash_exception($exception);
     }
 
-    redirect_to('faculty/records.php?year_level=' . $yearLevel . '&semester_no=' . $semesterNo . '&attendance_date=' . urlencode($attendanceDate));
+    redirect_to('faculty/records.php?department_id=' . urlencode($departmentQueryValue) . '&year_level=' . $yearLevel . '&semester_no=' . $semesterNo . '&attendance_date=' . urlencode($attendanceDate));
 }
 
-$students = query_all(
-    'SELECT * FROM students WHERE department_id = :department_id AND year_level = :year_level AND semester_no = :semester_no ORDER BY full_name',
-    ['department_id' => $departmentId, 'year_level' => $yearLevel, 'semester_no' => $semesterNo]
-);
-$existing = attendance_session_detail($departmentId, $yearLevel, $semesterNo, $attendanceDate);
+$students = attendance_scope_student_rows($departmentId, $yearLevel, $semesterNo);
+$existing = attendance_scope_detail($departmentId, $yearLevel, $semesterNo, $attendanceDate);
 $existingMap = [];
 foreach (($existing['records'] ?? []) as $record) {
     $existingMap[(int) $record['student_id']] = $record['status'];
 }
 $history = array_values(array_filter(
-    attendance_history_for_department($departmentId),
+    attendance_history_rows($departmentId),
     static fn (array $row): bool => (int) $row['year_level'] === $yearLevel && (int) $row['semester_no'] === $semesterNo
 ));
 $holidays = holiday_rows($departmentId);
 
-render_dashboard_layout('Attendance Records', 'teacher', 'records', 'faculty/records.css', 'faculty/records.js', function () use ($teacher, $yearLevel, $semesterNo, $attendanceDate, $students, $existing, $existingMap, $history, $holidays): void {
+render_dashboard_layout('Attendance Records', 'teacher', 'records', 'faculty/records.css', 'faculty/records.js', function () use ($departments, $selectedDepartment, $departmentId, $departmentQueryValue, $allDepartmentsMode, $yearLevel, $semesterNo, $attendanceDate, $students, $existing, $existingMap, $history, $holidays): void {
     ?>
     <section class="grid-2">
         <article class="data-card">
@@ -62,6 +81,15 @@ render_dashboard_layout('Attendance Records', 'teacher', 'records', 'faculty/rec
                 </div>
             </div>
             <form method="get" class="filters" style="margin-bottom:14px">
+                <div class="form-group">
+                    <label class="form-label" for="records-department">Department</label>
+                    <select class="form-select" id="records-department" name="department_id">
+                        <option value="all" <?= $allDepartmentsMode ? 'selected' : '' ?>>All Students</option>
+                        <?php foreach ($departments as $department): ?>
+                            <option value="<?= e((string) $department['id']) ?>" <?= !$allDepartmentsMode && (int) $departmentId === (int) $department['id'] ? 'selected' : '' ?>><?= e($department['name']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
                 <div class="form-group">
                     <label class="form-label" for="records-year">Year</label>
                     <select class="form-select" id="records-year" name="year_level">
@@ -88,6 +116,7 @@ render_dashboard_layout('Attendance Records', 'teacher', 'records', 'faculty/rec
             <?php if ($existing && $students): ?>
                 <form method="post" class="stack">
                     <input type="hidden" name="action" value="save_attendance">
+                    <input type="hidden" name="department_id" value="<?= e($departmentQueryValue) ?>">
                     <input type="hidden" name="year_level" value="<?= e((string) $yearLevel) ?>">
                     <input type="hidden" name="semester_no" value="<?= e((string) $semesterNo) ?>">
                     <input type="hidden" name="attendance_date" value="<?= e($attendanceDate) ?>">
@@ -95,6 +124,7 @@ render_dashboard_layout('Attendance Records', 'teacher', 'records', 'faculty/rec
                         <table>
                             <thead>
                             <tr>
+                                <?php if ($allDepartmentsMode): ?><th>Department</th><?php endif; ?>
                                 <th>Enrollment</th>
                                 <th>Student Name</th>
                                 <th>Status</th>
@@ -103,6 +133,7 @@ render_dashboard_layout('Attendance Records', 'teacher', 'records', 'faculty/rec
                             <tbody>
                             <?php foreach ($students as $student): ?>
                                 <tr>
+                                    <?php if ($allDepartmentsMode): ?><td><?= e($student['department_name'] ?? '-') ?></td><?php endif; ?>
                                     <td class="mono"><?= e($student['enrollment_no']) ?></td>
                                     <td><?= e($student['full_name']) ?></td>
                                     <td>
@@ -123,7 +154,7 @@ render_dashboard_layout('Attendance Records', 'teacher', 'records', 'faculty/rec
                     <button class="btn-primary" type="submit">Update Attendance</button>
                 </form>
             <?php else: ?>
-                <div class="empty-state">No attendance session exists for the selected class and date.</div>
+                <div class="empty-state">No attendance session exists for the selected filter, class, and date.</div>
             <?php endif; ?>
         </article>
 
@@ -131,7 +162,7 @@ render_dashboard_layout('Attendance Records', 'teacher', 'records', 'faculty/rec
             <div class="card-head">
                 <div>
                     <p class="eyebrow">History</p>
-                    <h3 class="card-title"><?= e($teacher['department_name'] ?? 'Department') ?> attendance log</h3>
+                    <h3 class="card-title"><?= e($selectedDepartment['name'] ?? 'Department') ?> attendance log</h3>
                 </div>
             </div>
             <?php if ($history): ?>
@@ -139,6 +170,7 @@ render_dashboard_layout('Attendance Records', 'teacher', 'records', 'faculty/rec
                     <table>
                         <thead>
                         <tr>
+                            <?php if ($allDepartmentsMode): ?><th>Department</th><?php endif; ?>
                             <th>Date</th>
                             <th>Teacher</th>
                             <th>Present</th>
@@ -149,6 +181,7 @@ render_dashboard_layout('Attendance Records', 'teacher', 'records', 'faculty/rec
                         <tbody>
                         <?php foreach ($history as $row): ?>
                             <tr>
+                                <?php if ($allDepartmentsMode): ?><td><?= e($row['department_name'] ?? '-') ?></td><?php endif; ?>
                                 <td><?= e($row['attendance_date']) ?></td>
                                 <td><?= e($row['teacher_name']) ?></td>
                                 <td><?= e((string) $row['present_count']) ?></td>
@@ -160,7 +193,7 @@ render_dashboard_layout('Attendance Records', 'teacher', 'records', 'faculty/rec
                     </table>
                 </div>
             <?php else: ?>
-                <div class="empty-state">No saved attendance history yet for this class.</div>
+                <div class="empty-state">No saved attendance history yet for this selected filter.</div>
             <?php endif; ?>
         </article>
     </section>
@@ -169,7 +202,7 @@ render_dashboard_layout('Attendance Records', 'teacher', 'records', 'faculty/rec
         <div class="card-head">
             <div>
                 <p class="eyebrow">Department Holidays</p>
-                <h3 class="card-title">Holiday and event records affecting your department</h3>
+                <h3 class="card-title">Holiday and event records affecting the selected filter</h3>
             </div>
         </div>
         <?php if ($holidays): ?>
@@ -199,6 +232,7 @@ render_dashboard_layout('Attendance Records', 'teacher', 'records', 'faculty/rec
                                 <form method="post">
                                     <input type="hidden" name="action" value="delete_holiday">
                                     <input type="hidden" name="holiday_id" value="<?= e((string) $holiday['id']) ?>">
+                                    <input type="hidden" name="department_id" value="<?= e($departmentQueryValue) ?>">
                                     <input type="hidden" name="year_level" value="<?= e((string) $yearLevel) ?>">
                                     <input type="hidden" name="semester_no" value="<?= e((string) $semesterNo) ?>">
                                     <input type="hidden" name="attendance_date" value="<?= e($attendanceDate) ?>">
@@ -211,7 +245,7 @@ render_dashboard_layout('Attendance Records', 'teacher', 'records', 'faculty/rec
                 </table>
             </div>
         <?php else: ?>
-            <div class="empty-state">No holiday records affect this department right now.</div>
+            <div class="empty-state">No holiday records affect the selected filter right now.</div>
         <?php endif; ?>
     </article>
     <?php

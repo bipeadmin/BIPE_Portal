@@ -219,7 +219,7 @@ CREATE TABLE assignments (
     semester_no TINYINT UNSIGNED NOT NULL,
     subject_id INT UNSIGNED NOT NULL,
     teacher_id INT UNSIGNED NOT NULL,
-    assignment_label ENUM('Assignment-I', 'Assignment-II', 'Assignment-III') NOT NULL,
+    assignment_label ENUM('Assignment-I', 'Assignment-II', 'Assignment-III', 'Assignment-IV', 'Assignment-V') NOT NULL,
     due_date DATE DEFAULT NULL,
     notes VARCHAR(255) DEFAULT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

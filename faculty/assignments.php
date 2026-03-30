@@ -11,7 +11,19 @@ $subjectId = (int) (post('subject_id') ?: ($_GET['subject_id'] ?? 0));
 $assignmentLabel = trim((string) (post('assignment_label') ?: ($_GET['assignment_label'] ?? 'Assignment-I')));
 $dueDate = (string) (post('due_date') ?: ($_GET['due_date'] ?? ''));
 
-$subjectOptions = subjects_for($departmentId, $semesterNo);
+$subjectOptions = query_all(
+    'SELECT * FROM subjects WHERE department_id = :department_id ORDER BY semester_no, subject_name',
+    ['department_id' => $departmentId]
+);
+$subjectLookup = [];
+foreach ($subjectOptions as $subject) {
+    $subjectLookup[(int) $subject['id']] = $subject;
+}
+
+if ($subjectId > 0 && isset($subjectLookup[$subjectId])) {
+    $semesterNo = (int) $subjectLookup[$subjectId]['semester_no'];
+}
+
 $students = query_all(
     'SELECT * FROM students WHERE department_id = :department_id AND semester_no = :semester_no ORDER BY full_name',
     ['department_id' => $departmentId, 'semester_no' => $semesterNo]
@@ -19,13 +31,26 @@ $students = query_all(
 
 if (is_post() && post('action') === 'save_assignment') {
     try {
+        $postedSubjectId = (int) post('subject_id');
+        $selectedSubject = $subjectLookup[$postedSubjectId] ?? null;
+        if (!$selectedSubject) {
+            throw new RuntimeException('Choose a valid subject first.');
+        }
+
+        $semesterNo = (int) $selectedSubject['semester_no'];
+        $students = query_all(
+            'SELECT * FROM students WHERE department_id = :department_id AND semester_no = :semester_no ORDER BY full_name',
+            ['department_id' => $departmentId, 'semester_no' => $semesterNo]
+        );
+
         $statuses = [];
         $submitted = (array) post('submitted', []);
         foreach ($students as $student) {
             $statuses[(int) $student['id']] = isset($submitted[$student['id']]) ? 'submitted' : 'pending';
         }
-        save_assignment_sheet((int) $teacher['id'], $departmentId, $semesterNo, (int) post('subject_id'), (string) post('assignment_label'), $statuses, (string) post('due_date') ?: null, trim((string) post('notes')) ?: null);
-        audit_log('teacher', (string) ($teacher['teacher_code'] ?? ('teacher#' . $teacher['id'])), 'ASSIGNMENT_TRACKER_SAVED', 'Saved ' . (string) post('assignment_label') . ' tracker for semester ' . $semesterNo);
+
+        save_assignment_sheet((int) $teacher['id'], $departmentId, $semesterNo, $postedSubjectId, (string) post('assignment_label'), $statuses, (string) post('due_date') ?: null, trim((string) post('notes')) ?: null);
+        audit_log('teacher', (string) ($teacher['teacher_code'] ?? ('teacher#' . $teacher['id'])), 'ASSIGNMENT_TRACKER_SAVED', 'Saved ' . (string) post('assignment_label') . ' tracker for ' . $selectedSubject['subject_name'] . ' (' . semester_label($semesterNo) . ')');
         flash('success', 'Assignment submission tracker saved successfully.');
     } catch (Throwable $exception) {
         flash_exception($exception);
@@ -36,7 +61,8 @@ if (is_post() && post('action') === 'save_assignment') {
 
 $existingAssignment = null;
 $submittedMap = [];
-if ($subjectId > 0) {
+$selectedSubject = $subjectLookup[$subjectId] ?? null;
+if ($selectedSubject) {
     $existingAssignment = query_one(
         'SELECT * FROM assignments WHERE academic_year_id = :academic_year_id AND department_id = :department_id AND semester_no = :semester_no AND subject_id = :subject_id AND assignment_label = :assignment_label',
         ['academic_year_id' => current_academic_year_id(), 'department_id' => $departmentId, 'semester_no' => $semesterNo, 'subject_id' => $subjectId, 'assignment_label' => $assignmentLabel]
@@ -45,6 +71,7 @@ if ($subjectId > 0) {
         foreach (query_all('SELECT * FROM assignment_submissions WHERE assignment_id = :assignment_id', ['assignment_id' => $existingAssignment['id']]) as $submission) {
             $submittedMap[(int) $submission['student_id']] = $submission['submission_status'];
         }
+        $dueDate = (string) ($existingAssignment['due_date'] ?? $dueDate);
     }
 }
 
@@ -77,7 +104,7 @@ render_dashboard_layout('Assignment Tracking', 'teacher', 'assignments', 'facult
                     <select class="form-select" id="assignment-subject-faculty" name="subject_id">
                         <option value="0">Select subject</option>
                         <?php foreach ($subjectOptions as $subject): ?>
-                            <option value="<?= e((string) $subject['id']) ?>" <?= $subjectId === (int) $subject['id'] ? 'selected' : '' ?>><?= e($subject['subject_name']) ?></option>
+                            <option value="<?= e((string) $subject['id']) ?>" <?= $subjectId === (int) $subject['id'] ? 'selected' : '' ?>><?= e($subject['subject_name']) ?> (<?= e(semester_label((int) $subject['semester_no'])) ?>)</option>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -172,10 +199,3 @@ render_dashboard_layout('Assignment Tracking', 'teacher', 'assignments', 'facult
     </section>
     <?php
 });
-
-
-
-
-
-
-

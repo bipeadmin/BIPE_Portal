@@ -148,7 +148,7 @@ function semester_label(int $semester): string
 
 function assignment_labels(): array
 {
-    return ['Assignment-I', 'Assignment-II', 'Assignment-III'];
+    return ['Assignment-I', 'Assignment-II', 'Assignment-III', 'Assignment-IV', 'Assignment-V'];
 }
 
 function current_academic_year(): ?array
