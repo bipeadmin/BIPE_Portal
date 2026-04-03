@@ -1,1 +1,283 @@
-.role-teacher .attendance-select { min-width: 120px; }
+.role-teacher .attendance-filters-card,
+.role-teacher .attendance-sheet-card,
+.role-teacher .attendance-sheet-wrap {
+  min-width: 0;
+}
+
+.role-teacher .attendance-sheet-head {
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.role-teacher .attendance-sheet-copy {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.role-teacher .attendance-sheet-head .card-title,
+.role-teacher .attendance-filters-card .card-title {
+  line-height: 1.22;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.role-teacher .attendance-sheet-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.role-teacher .attendance-sheet-chip {
+  max-width: 100%;
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(30, 64, 175, 0.12);
+  background: rgba(239, 246, 255, 0.92);
+  color: var(--text);
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.role-teacher .attendance-summary {
+  margin-left: auto;
+  width: min(100%, 420px);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.role-teacher .attendance-summary-item {
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(30, 64, 175, 0.12);
+  background: rgba(248, 250, 252, 0.9);
+  box-shadow: var(--shadow-sm);
+}
+
+.role-teacher .attendance-summary-label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.role-teacher .attendance-summary-value {
+  display: block;
+  color: var(--text);
+  font-size: clamp(22px, 2vw, 28px);
+  line-height: 1;
+}
+
+.role-teacher .attendance-summary-total {
+  background: rgba(239, 246, 255, 0.95);
+}
+
+.role-teacher .attendance-summary-present {
+  background: rgba(240, 253, 244, 0.95);
+}
+
+.role-teacher .attendance-summary-present .attendance-summary-value {
+  color: #15803d;
+}
+
+.role-teacher .attendance-summary-absent {
+  background: rgba(254, 242, 242, 0.95);
+}
+
+.role-teacher .attendance-summary-absent .attendance-summary-value {
+  color: var(--danger);
+}
+
+.role-teacher .attendance-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.role-teacher .attendance-actions .btn-secondary {
+  min-width: 180px;
+}
+
+.role-teacher .attendance-sheet-wrap {
+  max-height: clamp(360px, 58vh, 620px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.role-teacher .attendance-sheet-table {
+  width: 100%;
+  min-width: 0;
+  table-layout: auto;
+}
+
+.role-teacher .attendance-sheet-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: rgba(240, 249, 255, 0.98);
+}
+
+.role-teacher .attendance-sheet-table th,
+.role-teacher .attendance-sheet-table td {
+  vertical-align: top;
+}
+
+.role-teacher .attendance-sheet-table td {
+  overflow-wrap: anywhere;
+}
+
+.role-teacher .attendance-department-cell {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.role-teacher .attendance-sheet-table .mono {
+  white-space: normal;
+  word-break: break-word;
+}
+
+.role-teacher .attendance-sheet-table th:last-child,
+.role-teacher .attendance-status-cell {
+  width: 160px;
+}
+
+.role-teacher .attendance-select {
+  width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .role-teacher .attendance-sheet-head {
+    flex-direction: column;
+  }
+
+  .role-teacher .attendance-summary {
+    margin-left: 0;
+    width: 100%;
+  }
+}
+
+@media (max-width: 720px) {
+  .role-teacher .attendance-filters-form .btn-primary,
+  .role-teacher .attendance-actions .btn-secondary,
+  .role-teacher .attendance-sheet-form > .btn-primary {
+    width: 100%;
+  }
+
+  .role-teacher .attendance-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .role-teacher .attendance-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .role-teacher .attendance-sheet-wrap {
+    max-height: min(62vh, 520px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+    border: none;
+    background: transparent;
+  }
+
+  .role-teacher .attendance-sheet-table,
+  .role-teacher .attendance-sheet-table thead,
+  .role-teacher .attendance-sheet-table tbody,
+  .role-teacher .attendance-sheet-table tr,
+  .role-teacher .attendance-sheet-table th,
+  .role-teacher .attendance-sheet-table td {
+    display: block;
+    width: 100% !important;
+  }
+
+  .role-teacher .attendance-sheet-table {
+    background: transparent;
+  }
+
+  .role-teacher .attendance-sheet-table thead {
+    display: none;
+  }
+
+  .role-teacher .attendance-sheet-table tbody {
+    display: grid;
+    gap: 12px;
+  }
+
+  .role-teacher .attendance-sheet-table tbody tr {
+    overflow: hidden;
+    border: 1px solid rgba(30, 64, 175, 0.12);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .role-teacher .attendance-sheet-table td {
+    display: grid;
+    grid-template-columns: minmax(110px, 42%) minmax(0, 1fr);
+    gap: 12px;
+    align-items: start;
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(30, 64, 175, 0.08);
+    text-align: left;
+  }
+
+  .role-teacher .attendance-sheet-copy {
+    width: 100%;
+  }
+
+  .role-teacher .attendance-sheet-meta {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .role-teacher .attendance-sheet-chip {
+    width: 100%;
+    text-align: center;
+  }
+
+  .role-teacher .attendance-sheet-table td:last-child {
+    border-bottom: none;
+  }
+
+  .role-teacher .attendance-sheet-table td::before {
+    content: attr(data-label);
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .role-teacher .attendance-status-cell {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .role-teacher .attendance-status-cell .attendance-select {
+    width: 100%;
+  }
+
+  .role-teacher #attendance-remarks {
+    min-height: 120px;
+  }
+}
+
+@media (max-width: 480px) {
+  .role-teacher .attendance-sheet-meta {
+    grid-template-columns: 1fr;
+  }
+}
+

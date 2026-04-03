@@ -146,14 +146,14 @@ $pendingTotal = max(count($submissionRows) - $submittedTotal, 0);
 
 render_dashboard_layout('Assignment Oversight', 'admin', 'assignments', 'admin/assignments.css', 'admin/assignments.js', function () use ($departments, $departmentId, $semesterNo, $subjectId, $assignmentLabel, $submissionStatus, $search, $subjectOptions, $assignmentRows, $submissionRows, $submittedTotal, $pendingTotal): void {
     ?>
-    <article class="data-card">
+    <article class="data-card assignment-filters-card">
         <div class="card-head">
             <div>
                 <p class="eyebrow">Submission Filters</p>
                 <h3 class="card-title">Review assignment completion student-wise</h3>
             </div>
         </div>
-        <form method="get" class="filters">
+        <form method="get" class="filters assignment-filters">
             <div class="form-group">
                 <label class="form-label" for="assignment-department">Department</label>
                 <select class="form-select" id="assignment-department" name="department_id">
@@ -228,7 +228,7 @@ render_dashboard_layout('Assignment Oversight', 'admin', 'assignments', 'admin/a
         </article>
     </section>
 
-    <article class="data-card">
+    <article class="data-card assignment-summary-card">
         <div class="card-head">
             <div>
                 <p class="eyebrow">Assignment Register</p>
@@ -236,8 +236,8 @@ render_dashboard_layout('Assignment Oversight', 'admin', 'assignments', 'admin/a
             </div>
         </div>
         <?php if ($assignmentRows): ?>
-            <div class="table-wrap">
-                <table>
+            <div class="table-wrap assignment-summary-wrap">
+                <table class="assignment-summary-table">
                     <thead>
                     <tr>
                         <th>Department</th>
@@ -256,14 +256,14 @@ render_dashboard_layout('Assignment Oversight', 'admin', 'assignments', 'admin/a
                         $pending = max((int) $row['total_students'] - $submitted, 0);
                         ?>
                         <tr>
-                            <td><?= e($row['department_name']) ?></td>
-                            <td><?= e(semester_label((int) $row['semester_no'])) ?></td>
-                            <td><?= e($row['subject_name']) ?></td>
-                            <td><span class="badge info"><?= e($row['assignment_label']) ?></span></td>
-                            <td><?= e($row['teacher_name']) ?></td>
-                            <td><?= e((string) $submitted) ?></td>
-                            <td><?= e((string) $pending) ?></td>
-                            <td>
+                            <td data-label="Department"><?= e($row['department_name']) ?></td>
+                            <td data-label="Semester"><?= e(semester_label((int) $row['semester_no'])) ?></td>
+                            <td data-label="Subject"><?= e($row['subject_name']) ?></td>
+                            <td data-label="Assignment"><span class="badge info"><?= e($row['assignment_label']) ?></span></td>
+                            <td data-label="Faculty"><?= e($row['teacher_name']) ?></td>
+                            <td data-label="Submitted"><?= e((string) $submitted) ?></td>
+                            <td data-label="Pending"><?= e((string) $pending) ?></td>
+                            <td data-label="Action" class="action-cell">
                                 <form method="post">
                                     <input type="hidden" name="action" value="delete_assignment">
                                     <input type="hidden" name="assignment_id" value="<?= e((string) $row['id']) ?>">
@@ -280,7 +280,7 @@ render_dashboard_layout('Assignment Oversight', 'admin', 'assignments', 'admin/a
         <?php endif; ?>
     </article>
 
-    <article class="data-card">
+    <article class="data-card assignment-student-card">
         <div class="card-head">
             <div>
                 <p class="eyebrow">Student Submission Register</p>
@@ -288,8 +288,8 @@ render_dashboard_layout('Assignment Oversight', 'admin', 'assignments', 'admin/a
             </div>
         </div>
         <?php if ($submissionRows): ?>
-            <div class="table-wrap">
-                <table>
+            <div class="table-wrap assignment-student-wrap">
+                <table class="assignment-student-table">
                     <thead>
                     <tr>
                         <th>Department</th>
@@ -310,17 +310,17 @@ render_dashboard_layout('Assignment Oversight', 'admin', 'assignments', 'admin/a
                         $isSubmitted = ($row['submission_status'] ?? 'pending') === 'submitted';
                         ?>
                         <tr>
-                            <td><?= e($row['department_name']) ?></td>
-                            <td><?= e(semester_label((int) $row['semester_no'])) ?></td>
-                            <td><?= e($row['subject_name']) ?></td>
-                            <td><span class="badge info"><?= e($row['assignment_label']) ?></span></td>
-                            <td><?= e($row['student_name']) ?></td>
-                            <td class="mono"><?= e($row['enrollment_no']) ?></td>
-                            <td><?= e(year_label((int) $row['year_level'])) ?></td>
-                            <td><?= e((string) ($row['email'] ?: '-')) ?></td>
-                            <td><?= e($row['teacher_name']) ?></td>
-                            <td><span class="badge <?= $isSubmitted ? 'success' : 'warning' ?>"><?= e($isSubmitted ? 'Submitted' : 'Pending') ?></span></td>
-                            <td><?= e((string) ($row['submitted_at'] ?: '-')) ?></td>
+                            <td data-label="Department"><?= e($row['department_name']) ?></td>
+                            <td data-label="Semester"><?= e(semester_label((int) $row['semester_no'])) ?></td>
+                            <td data-label="Subject"><?= e($row['subject_name']) ?></td>
+                            <td data-label="Assignment"><span class="badge info"><?= e($row['assignment_label']) ?></span></td>
+                            <td data-label="Student"><?= e($row['student_name']) ?></td>
+                            <td data-label="Enrollment" class="mono"><?= e($row['enrollment_no']) ?></td>
+                            <td data-label="Year"><?= e(year_label((int) $row['year_level'])) ?></td>
+                            <td data-label="Email"><?= e((string) ($row['email'] ?: '-')) ?></td>
+                            <td data-label="Faculty"><?= e($row['teacher_name']) ?></td>
+                            <td data-label="Status"><span class="badge <?= $isSubmitted ? 'success' : 'warning' ?>"><?= e($isSubmitted ? 'Submitted' : 'Pending') ?></span></td>
+                            <td data-label="Submitted At"><?= e((string) ($row['submitted_at'] ?: '-')) ?></td>
                         </tr>
                     <?php endforeach; ?>
                     </tbody>

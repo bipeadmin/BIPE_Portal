@@ -59,17 +59,26 @@ $holiday = holiday_event_for_date($allDepartmentsMode ? null : $departmentId, $a
 $cardSubtitle = $existing
     ? ($allDepartmentsMode ? 'Editing existing attendance sessions for the selected scope.' : 'Editing an existing attendance session.')
     : 'Create a new attendance session for this class.';
+$totalStudents = count($students);
+$absentStudents = 0;
+foreach ($students as $student) {
+    $status = $existingMap[(int) $student['id']] ?? 'P';
+    if ($status === 'A') {
+        $absentStudents++;
+    }
+}
+$presentStudents = $totalStudents - $absentStudents;
 
-render_dashboard_layout('Mark Attendance', 'teacher', 'attendance', 'faculty/attendance.css', 'faculty/attendance.js', function () use ($departments, $selectedDepartment, $departmentId, $departmentQueryValue, $allDepartmentsMode, $yearLevel, $semesterNo, $attendanceDate, $students, $existingMap, $holiday, $existing, $cardSubtitle): void {
+render_dashboard_layout('Mark Attendance', 'teacher', 'attendance', 'faculty/attendance.css', 'faculty/attendance.js', function () use ($departments, $selectedDepartment, $departmentId, $departmentQueryValue, $allDepartmentsMode, $yearLevel, $semesterNo, $attendanceDate, $students, $existingMap, $holiday, $existing, $cardSubtitle, $totalStudents, $presentStudents, $absentStudents): void {
     ?>
-    <section class="data-card">
+    <section class="data-card attendance-filters-card">
         <div class="card-head">
             <div>
                 <p class="eyebrow">Class Filters</p>
                 <h3 class="card-title"><?= e($selectedDepartment['name'] ?? 'Department') ?> attendance sheet</h3>
             </div>
         </div>
-        <form method="get" class="filters">
+        <form method="get" class="filters attendance-filters-form">
             <div class="form-group">
                 <label class="form-label" for="department-level">Department</label>
                 <select class="form-select" id="department-level" name="department_id">
@@ -109,27 +118,46 @@ render_dashboard_layout('Mark Attendance', 'teacher', 'attendance', 'faculty/att
         <div class="notice-box warning">This date falls under <strong><?= e($holiday['event_type']) ?></strong>: <?= e($holiday['title']) ?> (<?= e(holiday_event_date_label($holiday)) ?>, <?= e((string) $holidayDays) ?> day<?= $holidayDays === 1 ? '' : 's' ?>). Attendance can still be saved if you want to override it.</div>
     <?php endif; ?>
 
-    <section class="data-card">
-        <div class="card-head">
-            <div>
+    <section class="data-card attendance-sheet-card">
+        <div class="card-head attendance-sheet-head">
+            <div class="attendance-sheet-copy">
                 <p class="eyebrow">Attendance Sheet</p>
-                <h3 class="card-title"><?= e($selectedDepartment['name'] ?? 'Department') ?> · <?= e(year_label($yearLevel)) ?> · <?= e(semester_label($semesterNo)) ?> · <?= e($attendanceDate) ?></h3>
+                <h3 class="card-title"><?= e($selectedDepartment['name'] ?? 'Department') ?></h3>
+                <div class="attendance-sheet-meta" aria-label="Selected class details">
+                    <span class="attendance-sheet-chip"><?= e(year_label($yearLevel)) ?></span>
+                    <span class="attendance-sheet-chip"><?= e(semester_label($semesterNo)) ?></span>
+                    <span class="attendance-sheet-chip"><?= e($attendanceDate) ?></span>
+                </div>
                 <p class="card-subtitle"><?= e($cardSubtitle) ?></p>
+            </div>
+            <div class="attendance-summary" aria-live="polite">
+                <div class="attendance-summary-item attendance-summary-total">
+                    <span class="attendance-summary-label">Total Students</span>
+                    <strong class="attendance-summary-value" data-attendance-total><?= e((string) $totalStudents) ?></strong>
+                </div>
+                <div class="attendance-summary-item attendance-summary-present">
+                    <span class="attendance-summary-label">Present</span>
+                    <strong class="attendance-summary-value" data-attendance-present><?= e((string) $presentStudents) ?></strong>
+                </div>
+                <div class="attendance-summary-item attendance-summary-absent">
+                    <span class="attendance-summary-label">Absent</span>
+                    <strong class="attendance-summary-value" data-attendance-absent><?= e((string) $absentStudents) ?></strong>
+                </div>
             </div>
         </div>
         <?php if ($students): ?>
-            <form method="post" class="stack">
+            <form method="post" class="stack attendance-sheet-form">
                 <input type="hidden" name="action" value="save_attendance">
                 <input type="hidden" name="department_id" value="<?= e($departmentQueryValue) ?>">
                 <input type="hidden" name="year_level" value="<?= e((string) $yearLevel) ?>">
                 <input type="hidden" name="semester_no" value="<?= e((string) $semesterNo) ?>">
                 <input type="hidden" name="attendance_date" value="<?= e($attendanceDate) ?>">
-                <div class="inline-actions">
+                <div class="inline-actions attendance-actions">
                     <button class="btn-secondary" type="button" data-mark-all="P">Mark All Present</button>
                     <button class="btn-secondary" type="button" data-mark-all="A">Mark All Absent</button>
                 </div>
-                <div class="table-wrap">
-                    <table>
+                <div class="table-wrap attendance-sheet-wrap">
+                    <table class="attendance-sheet-table">
                         <thead>
                         <tr>
                             <?php if ($allDepartmentsMode): ?><th>Department</th><?php endif; ?>
@@ -142,11 +170,11 @@ render_dashboard_layout('Mark Attendance', 'teacher', 'attendance', 'faculty/att
                         <?php foreach ($students as $student):
                             $status = $existingMap[(int) $student['id']] ?? 'P';
                             ?>
-                            <tr>
-                                <?php if ($allDepartmentsMode): ?><td><?= e($student['department_name'] ?? '-') ?></td><?php endif; ?>
-                                <td class="mono"><?= e($student['enrollment_no']) ?></td>
-                                <td><?= e($student['full_name']) ?></td>
-                                <td>
+                            <tr class="attendance-row">
+                                <?php if ($allDepartmentsMode): ?><td class="attendance-department-cell" data-label="Department"><?= e($student['department_name'] ?? '-') ?></td><?php endif; ?>
+                                <td class="mono attendance-enrollment-cell" data-label="Enrollment"><?= e($student['enrollment_no']) ?></td>
+                                <td class="attendance-name-cell" data-label="Student Name"><?= e($student['full_name']) ?></td>
+                                <td class="attendance-status-cell" data-label="Status">
                                     <select class="form-select attendance-select" name="status[<?= e((string) $student['id']) ?>]">
                                         <option value="P" <?= $status === 'P' ? 'selected' : '' ?>>Present</option>
                                         <option value="A" <?= $status === 'A' ? 'selected' : '' ?>>Absent</option>
@@ -169,3 +197,5 @@ render_dashboard_layout('Mark Attendance', 'teacher', 'attendance', 'faculty/att
     </section>
     <?php
 });
+
+

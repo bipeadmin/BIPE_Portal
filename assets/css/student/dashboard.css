@@ -1,1 +1,55 @@
-.role-student .data-list-item strong { display: block; margin-bottom: 4px; }
+.role-student .data-list-item strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.role-student .student-profile-grid {
+  align-items: start;
+}
+
+.role-student .student-profile-panel {
+  padding: 28px 24px;
+  text-align: center;
+}
+
+.role-student .student-profile-avatar {
+  width: 108px;
+  height: 108px;
+  margin: 0 auto 14px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--primary), #0f766e);
+  color: #fff;
+  font-family: 'Cinzel', serif;
+  font-size: 38px;
+  box-shadow: var(--shadow-sm);
+}
+
+.role-student .student-profile-avatar.has-image {
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.role-student .student-profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.role-student .student-profile-enrollment {
+  margin-top: 6px;
+}
+
+.role-student .student-profile-meta {
+  display: grid;
+  gap: 12px;
+  margin-top: 20px;
+  text-align: left;
+}
+
+@media (max-width: 720px) {
+  .role-student .student-profile-panel {
+    padding: 20px 16px;
+  }
+}

@@ -178,7 +178,43 @@ function update_teacher_account(int $teacherId, string $fullName, string $email,
     execute_sql($sql, $params);
 }
 
-function update_teacher_profile(int $teacherId, string $fullName, string $email, ?string $currentPassword = null, ?string $newPassword = null): void
+function update_admin_profile(int $adminId, string $fullName, string $email, ?string $phoneNumber = null, ?string $profileImagePath = null): void
+{
+    $admin = query_one('SELECT * FROM admins WHERE id = :id LIMIT 1', ['id' => $adminId]);
+    if (!$admin) {
+        throw new RuntimeException('Administrator account not found.');
+    }
+
+    $fullName = trim($fullName);
+    if ($fullName === '') {
+        throw new RuntimeException('Administrator name is required.');
+    }
+
+    $email = validate_email_address($email);
+    $emailExists = query_one('SELECT id FROM admins WHERE email = :email AND id != :id LIMIT 1', ['email' => $email, 'id' => $adminId]);
+    if ($emailExists) {
+        throw new RuntimeException('Another administrator account already uses this email address.');
+    }
+
+    execute_sql(
+        'UPDATE admins
+         SET full_name = :full_name,
+             email = :email,
+             phone_number = :phone_number,
+             profile_image_path = :profile_image_path,
+             updated_at = NOW()
+         WHERE id = :id',
+        [
+            'id' => $adminId,
+            'full_name' => $fullName,
+            'email' => $email,
+            'phone_number' => normalize_phone_number($phoneNumber),
+            'profile_image_path' => $profileImagePath,
+        ]
+    );
+}
+
+function update_teacher_profile(int $teacherId, string $fullName, string $email, ?string $phoneNumber = null, ?string $profileImagePath = null, ?string $currentPassword = null, ?string $newPassword = null): void
 {
     $teacher = query_one('SELECT * FROM teachers WHERE id = :id LIMIT 1', ['id' => $teacherId]);
     if (!$teacher) {
@@ -200,8 +236,15 @@ function update_teacher_profile(int $teacherId, string $fullName, string $email,
         'id' => $teacherId,
         'full_name' => $fullName,
         'email' => $email,
+        'phone_number' => normalize_phone_number($phoneNumber),
+        'profile_image_path' => $profileImagePath,
     ];
-    $sql = 'UPDATE teachers SET full_name = :full_name, email = :email, updated_at = NOW()';
+    $sql = 'UPDATE teachers
+            SET full_name = :full_name,
+                email = :email,
+                phone_number = :phone_number,
+                profile_image_path = :profile_image_path,
+                updated_at = NOW()';
 
     if ($newPassword !== null && trim($newPassword) !== '') {
         if ($currentPassword === null || !password_verify($currentPassword, $teacher['password_hash'])) {
@@ -217,7 +260,36 @@ function update_teacher_profile(int $teacherId, string $fullName, string $email,
     execute_sql($sql, $params);
 }
 
-function register_student_account_with_email(string $enrollmentNo, int $departmentId, string $email, string $password): bool
+function update_student_profile(int $studentId, string $email, ?string $phoneNumber = null, ?string $profileImagePath = null): void
+{
+    $student = query_one('SELECT * FROM students WHERE id = :id LIMIT 1', ['id' => $studentId]);
+    if (!$student) {
+        throw new RuntimeException('Student account not found.');
+    }
+
+    $email = validate_email_address($email);
+    $emailExists = query_one('SELECT id FROM students WHERE email = :email AND id != :id LIMIT 1', ['email' => $email, 'id' => $studentId]);
+    if ($emailExists) {
+        throw new RuntimeException('This email is already used by another student account.');
+    }
+
+    execute_sql(
+        'UPDATE students
+         SET email = :email,
+             phone_number = :phone_number,
+             profile_image_path = :profile_image_path,
+             updated_at = NOW()
+         WHERE id = :id',
+        [
+            'id' => $studentId,
+            'email' => $email,
+            'phone_number' => normalize_phone_number($phoneNumber),
+            'profile_image_path' => $profileImagePath,
+        ]
+    );
+}
+
+function register_student_account_with_email(string $enrollmentNo, int $departmentId, string $email, string $password, ?string $phoneNumber = null, ?string $profileImagePath = null): bool
 {
     $student = query_one(
         'SELECT * FROM students WHERE enrollment_no = :enrollment_no AND department_id = :department_id LIMIT 1',
@@ -242,10 +314,17 @@ function register_student_account_with_email(string $enrollmentNo, int $departme
 
     execute_sql(
         'UPDATE students
-         SET email = :email, password_hash = :password_hash, registered_at = NOW(), updated_at = NOW()
+         SET email = :email,
+             phone_number = :phone_number,
+             profile_image_path = :profile_image_path,
+             password_hash = :password_hash,
+             registered_at = NOW(),
+             updated_at = NOW()
          WHERE id = :id',
         [
             'email' => $email,
+            'phone_number' => normalize_phone_number($phoneNumber),
+            'profile_image_path' => $profileImagePath,
             'password_hash' => password_hash($password, PASSWORD_DEFAULT),
             'id' => $student['id'],
         ]
@@ -503,6 +582,14 @@ function save_mark_upload_sheet(int $teacherId, int $departmentId, int $semester
             $marksValue = $record['marks'] ?? null;
             if (!$isAbsent && $marksValue === null) {
                 continue;
+            }
+
+            if (!$isAbsent) {
+                $numericMarks = (float) $marksValue;
+                if ($numericMarks < 0 || $numericMarks > $maxMarks) {
+                    throw new RuntimeException('Marks cannot be less than 0 or greater than ' . $maxMarks . ' for ' . $examType . '.');
+                }
+                $marksValue = $numericMarks;
             }
 
             execute_sql(
@@ -782,6 +869,8 @@ function request_password_reset_delivery(string $role, string $email): ?array
 
     return ['preview_otp' => $preview, 'target' => $request['target']];
 }
+
+
 
 
 

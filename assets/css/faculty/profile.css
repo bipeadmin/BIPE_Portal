@@ -1,2 +1,50 @@
-.profile-panel { padding: 28px 24px; text-align: center; }
-.profile-avatar { width: 86px; height: 86px; margin: 0 auto 14px; border-radius: 999px; display: grid; place-items: center; background: linear-gradient(135deg, var(--faculty), #14b8a6); color: #fff; font-family: 'Cinzel', serif; font-size: 32px; }
+.role-teacher .profile-grid {
+  align-items: start;
+}
+
+.role-teacher .profile-panel {
+  padding: 28px 24px;
+  text-align: center;
+}
+
+.role-teacher .profile-avatar {
+  width: 110px;
+  height: 110px;
+  margin: 0 auto 14px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--faculty), #14b8a6);
+  color: #fff;
+  font-family: 'Cinzel', serif;
+  font-size: 38px;
+  box-shadow: var(--shadow-sm);
+}
+
+.role-teacher .profile-avatar.has-image {
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.role-teacher .profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.role-teacher .profile-code {
+  margin-top: 10px;
+}
+
+.role-teacher .profile-meta-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 20px;
+  text-align: left;
+}
+
+@media (max-width: 720px) {
+  .role-teacher .profile-panel {
+    padding: 20px 16px;
+  }
+}

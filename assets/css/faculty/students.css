@@ -1,0 +1,91 @@
+.role-teacher .student-directory-card,
+.role-teacher .student-directory-wrap {
+  min-width: 0;
+}
+
+.role-teacher .student-directory-wrap {
+  max-height: clamp(380px, 64vh, 760px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.role-teacher .student-directory-table {
+  width: 100%;
+  min-width: 980px;
+  table-layout: auto;
+}
+
+
+.role-teacher .student-directory-table td {
+  overflow-wrap: anywhere;
+  vertical-align: top;
+}
+
+@media (max-width: 720px) {
+  .role-teacher .student-directory-wrap {
+    max-height: min(62vh, 560px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    border: none;
+    background: transparent;
+  }
+
+  .role-teacher .student-directory-table,
+  .role-teacher .student-directory-table thead,
+  .role-teacher .student-directory-table tbody,
+  .role-teacher .student-directory-table tr,
+  .role-teacher .student-directory-table th,
+  .role-teacher .student-directory-table td {
+    display: block;
+    width: 100% !important;
+  }
+
+  .role-teacher .student-directory-table thead {
+    display: none;
+  }
+
+  .role-teacher .student-directory-table tbody {
+    display: grid;
+    gap: 12px;
+  }
+
+  .role-teacher .student-directory-table tbody tr {
+    overflow: hidden;
+    border: 1px solid rgba(30, 64, 175, 0.12);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .role-teacher .student-directory-table td {
+    display: grid;
+    grid-template-columns: minmax(110px, 42%) minmax(0, 1fr);
+    gap: 12px;
+    align-items: center;
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(30, 64, 175, 0.08);
+    text-align: left;
+  }
+
+  .role-teacher .student-directory-table td:last-child {
+    border-bottom: none;
+  }
+
+  .role-teacher .student-directory-table td::before {
+    content: attr(data-label);
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .role-teacher .student-name-cell {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+
+

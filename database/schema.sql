@@ -33,6 +33,8 @@ CREATE TABLE admins (
     username VARCHAR(50) NOT NULL UNIQUE,
     full_name VARCHAR(120) NOT NULL,
     email VARCHAR(150) NOT NULL UNIQUE,
+    phone_number VARCHAR(20) DEFAULT NULL,
+    profile_image_path VARCHAR(255) DEFAULT NULL,
     password_hash VARCHAR(255) NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT NULL
@@ -54,6 +56,8 @@ CREATE TABLE teachers (
     teacher_code VARCHAR(60) NOT NULL UNIQUE,
     full_name VARCHAR(120) NOT NULL,
     email VARCHAR(150) NOT NULL UNIQUE,
+    phone_number VARCHAR(20) DEFAULT NULL,
+    profile_image_path VARCHAR(255) DEFAULT NULL,
     password_hash VARCHAR(255) NOT NULL,
     status ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
     registered_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -70,6 +74,8 @@ CREATE TABLE students (
     enrollment_no VARCHAR(30) NOT NULL UNIQUE,
     full_name VARCHAR(150) NOT NULL,
     email VARCHAR(150) DEFAULT NULL,
+    phone_number VARCHAR(20) DEFAULT NULL,
+    profile_image_path VARCHAR(255) DEFAULT NULL,
     year_level TINYINT UNSIGNED NOT NULL,
     semester_no TINYINT UNSIGNED NOT NULL,
     password_hash VARCHAR(255) DEFAULT NULL,
@@ -257,5 +263,6 @@ CREATE TABLE audit_logs (
     INDEX idx_audit_ip_time (ip_address, created_at),
     INDEX idx_audit_action_time (action_code, created_at)
 ) ENGINE=InnoDB;
+
 
 

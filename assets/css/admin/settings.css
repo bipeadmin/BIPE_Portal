@@ -1,1 +1,54 @@
-.role-admin .radio-list { margin-top: 8px; }
+.role-admin .radio-list {
+  margin-top: 8px;
+}
+
+.role-admin .admin-profile-grid {
+  align-items: start;
+}
+
+.role-admin .admin-profile-panel {
+  padding: 28px 24px;
+  text-align: center;
+}
+
+.role-admin .admin-profile-avatar {
+  width: 110px;
+  height: 110px;
+  margin: 0 auto 14px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--primary), #0f766e);
+  color: #fff;
+  font-family: 'Cinzel', serif;
+  font-size: 38px;
+  box-shadow: var(--shadow-sm);
+}
+
+.role-admin .admin-profile-avatar.has-image {
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.role-admin .admin-profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.role-admin .admin-profile-code {
+  margin-top: 10px;
+}
+
+.role-admin .admin-profile-meta {
+  display: grid;
+  gap: 12px;
+  margin-top: 20px;
+  text-align: left;
+}
+
+@media (max-width: 720px) {
+  .role-admin .admin-profile-panel {
+    padding: 20px 16px;
+  }
+}

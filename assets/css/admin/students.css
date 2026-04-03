@@ -1,1 +1,123 @@
-.role-admin .table-wrap table { min-width: 860px; }
+.role-admin .student-directory-card,
+.role-admin .student-directory-wrap {
+  min-width: 0;
+}
+
+.role-admin .student-directory-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.role-admin .student-directory-wrap {
+  max-height: clamp(420px, 64vh, 760px);
+  overflow-x: auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable both-edges;
+}
+
+.role-admin .student-directory-wrap thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: rgba(241, 245, 249, 0.96);
+  backdrop-filter: blur(10px);
+}
+
+.role-admin .student-directory-table {
+  width: 100%;
+  min-width: 0;
+  table-layout: auto;
+}
+
+
+.role-admin .student-directory-table td {
+  overflow-wrap: anywhere;
+  vertical-align: top;
+}
+
+.role-admin .student-directory-table th:last-child,
+.role-admin .student-directory-table td:last-child {
+  width: 120px;
+}
+
+.role-admin .student-directory-table td:last-child form,
+.role-admin .student-directory-table td:last-child button {
+  width: 100%;
+}
+
+@media (max-width: 720px) {
+  .role-admin .student-directory-wrap {
+    max-height: min(68vh, 620px);
+    overflow-x: hidden;
+    overflow-y: auto;
+    border: none;
+    background: transparent;
+  }
+
+  .role-admin .student-directory-table,
+  .role-admin .student-directory-table thead,
+  .role-admin .student-directory-table tbody,
+  .role-admin .student-directory-table tr,
+  .role-admin .student-directory-table th,
+  .role-admin .student-directory-table td {
+    display: block;
+    width: 100% !important;
+  }
+
+  .role-admin .student-directory-table thead {
+    display: none;
+  }
+
+  .role-admin .student-directory-table tbody {
+    display: grid;
+    gap: 12px;
+  }
+
+  .role-admin .student-directory-table tbody tr {
+    overflow: hidden;
+    border: 1px solid rgba(30, 64, 175, 0.12);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .role-admin .student-directory-table td {
+    display: grid;
+    grid-template-columns: minmax(110px, 42%) minmax(0, 1fr);
+    gap: 12px;
+    align-items: center;
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(30, 64, 175, 0.08);
+    text-align: left;
+  }
+
+  .role-admin .student-directory-table td:last-child {
+    border-bottom: none;
+  }
+
+  .role-admin .student-directory-table td::before {
+    content: attr(data-label);
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .role-admin .student-name-cell {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .role-admin .student-directory-table td[data-label='Action'] {
+    grid-template-columns: 1fr;
+  }
+
+  .role-admin .student-directory-wrap thead th {
+    position: static;
+    backdrop-filter: none;
+  }
+}
+

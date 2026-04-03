@@ -1,1 +1,95 @@
-.role-admin .table-wrap table { min-width: 860px; }
+.role-admin .department-report-card,
+.role-admin .department-report-wrap {
+  min-width: 0;
+}
+
+.role-admin .department-report-table {
+  min-width: 860px;
+}
+
+.role-admin .department-report-table td {
+  overflow-wrap: anywhere;
+  vertical-align: top;
+}
+
+.role-admin .department-report-table td strong {
+  display: block;
+  font-weight: 600;
+}
+
+.role-admin .department-code {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+@media (max-width: 720px) {
+  .role-admin .department-report-card .card-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .role-admin .department-report-wrap {
+    overflow-x: hidden;
+    overflow-y: visible;
+    border: none;
+    background: transparent;
+  }
+
+  .role-admin .department-report-table,
+  .role-admin .department-report-table thead,
+  .role-admin .department-report-table tbody,
+  .role-admin .department-report-table tr,
+  .role-admin .department-report-table th,
+  .role-admin .department-report-table td {
+    display: block;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .role-admin .department-report-table thead {
+    display: none;
+  }
+
+  .role-admin .department-report-table tbody {
+    display: grid;
+    gap: 12px;
+  }
+
+  .role-admin .department-report-table tbody tr {
+    overflow: hidden;
+    border: 1px solid rgba(30, 64, 175, 0.12);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .role-admin .department-report-table td {
+    display: grid;
+    grid-template-columns: minmax(122px, 44%) minmax(0, 1fr);
+    gap: 12px;
+    align-items: start;
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(30, 64, 175, 0.08);
+    text-align: left;
+  }
+
+  .role-admin .department-report-table td:last-child {
+    border-bottom: none;
+  }
+
+  .role-admin .department-report-table td::before {
+    content: attr(data-label);
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .role-admin .department-report-table td .badge {
+    justify-self: start;
+  }
+}

@@ -90,7 +90,7 @@ function next_teacher_code(string $fullName, string $departmentCode): string
     return $candidate;
 }
 
-function register_teacher_account(string $name, int $departmentId, string $email, string $password): array
+function register_teacher_account(string $name, int $departmentId, string $email, string $password, ?string $profileImagePath = null): array
 {
     $department = query_one('SELECT * FROM departments WHERE id = :id', ['id' => $departmentId]);
     if (!$department) {
@@ -113,18 +113,19 @@ function register_teacher_account(string $name, int $departmentId, string $email
     $teacherCode = next_teacher_code($name, (string) $department['code']);
 
     execute_sql(
-        'INSERT INTO teachers (department_id, teacher_code, full_name, email, password_hash, status, registered_at)
-         VALUES (:department_id, :teacher_code, :full_name, :email, :password_hash, "pending", NOW())',
+        'INSERT INTO teachers (department_id, teacher_code, full_name, email, profile_image_path, password_hash, status, registered_at)
+         VALUES (:department_id, :teacher_code, :full_name, :email, :profile_image_path, :password_hash, "pending", NOW())',
         [
             'department_id' => $departmentId,
             'teacher_code' => $teacherCode,
             'full_name' => $name,
             'email' => $email,
+            'profile_image_path' => $profileImagePath,
             'password_hash' => password_hash($password, PASSWORD_DEFAULT),
         ]
     );
 
-    return ['teacher_code' => $teacherCode, 'department' => $department];
+    return ['teacher_code' => $teacherCode, 'department' => $department, 'teacher_id' => (int) db()->lastInsertId()];
 }
 
 function register_student_account(string $enrollmentNo, int $departmentId, string $password): bool
@@ -177,3 +178,4 @@ function change_admin_password(int $adminId, string $currentPassword, string $ne
 
     return true;
 }
+

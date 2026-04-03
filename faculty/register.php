@@ -20,13 +20,15 @@ if (is_post()) {
 
     try {
         rate_limit_or_fail('register_teacher:' . strtolower(trim((string) post('email'))), 5, 900);
+        $profileImagePath = store_profile_image_upload((array) ($_FILES['profile_image'] ?? []), 'teachers');
         $result = register_teacher_account(
             trim((string) post('full_name')),
             (int) post('department_id'),
             trim((string) post('email')),
-            $password
+            $password,
+            $profileImagePath
         );
-        flash('success', 'Faculty registration submitted. Your faculty ID is ' . $result['teacher_code'] . '. Wait for admin approval before login.');
+        flash('success', 'Faculty registration submitted. Your faculty ID is ' . $result['teacher_code'] . '. Wait for admin approval before login. You can add your phone number later from the profile page after approval.');
         redirect_to('faculty/login.php');
     } catch (Throwable $exception) {
         flash_exception($exception, 'Faculty registration could not be completed right now. Please review your details and try again.');
@@ -36,7 +38,7 @@ if (is_post()) {
 
 render_auth_layout('Faculty Registration', 'Register a new faculty account. The administrator must approve it before access is granted.', 'faculty/register.css', 'faculty/register.js', function () use ($departments): void {
     ?>
-    <form method="post" class="form-grid">
+    <form method="post" enctype="multipart/form-data" class="form-grid">
         <div class="form-group">
             <label class="form-label" for="faculty-name">Full Name</label>
             <input class="form-input" id="faculty-name" name="full_name" placeholder="Prof. Example Name" autocomplete="name" required>
@@ -56,6 +58,11 @@ render_auth_layout('Faculty Registration', 'Register a new faculty account. The 
                 <input class="form-input" id="faculty-email" name="email" type="email" autocomplete="email" placeholder="name@example.com" required>
             </div>
         </div>
+        <div class="form-group">
+            <label class="form-label" for="faculty-profile-image">Profile Image</label>
+            <input class="form-input" id="faculty-profile-image" type="file" name="profile_image" accept=".jpg,.jpeg,.png,.webp" data-file-input data-file-target="#faculty-profile-file-name">
+            <div class="file-hint" id="faculty-profile-file-name">No image selected</div>
+        </div>
         <div class="form-grid two">
             <div class="form-group">
                 <label class="form-label" for="faculty-register-password">Password</label>
@@ -66,7 +73,7 @@ render_auth_layout('Faculty Registration', 'Register a new faculty account. The 
                 <input class="form-input" id="faculty-register-password-confirm" name="confirm_password" type="password" autocomplete="new-password" required>
             </div>
         </div>
-        <div class="notice-box">Use a strong password with uppercase, lowercase, number, and special character. The system generates a unique faculty ID automatically.</div>
+        <div class="notice-box">Profile image optional hai. Phone number faculty registration me nahi manga jayega; approved login ke baad profile page se add kiya ja sakega.</div>
         <div class="form-actions">
             <button class="btn-primary" type="submit">Submit Registration</button>
             <a class="btn-secondary" href="<?= e(url('faculty/login.php')) ?>">Back to Login</a>

@@ -11,17 +11,17 @@ $rows = $departmentId > 0 ? class_marks_overview_rows($departmentId, $semesterNo
 
 render_dashboard_layout('Report Cards', 'admin', 'report_cards', 'admin/report_cards.css', 'admin/report_cards.js', function () use ($departments, $departmentId, $semesterNo, $rows): void {
     ?>
-    <article class="data-card">
-        <div class="card-head">
+    <article class="data-card report-card-shell">
+        <div class="card-head report-card-head">
             <div>
                 <p class="eyebrow">Printable Results</p>
                 <h3 class="card-title">Generate class-wise report cards</h3>
             </div>
             <?php if ($departmentId > 0): ?>
-                <a class="btn-primary" href="<?= e(url('admin/report_card_print.php?department_id=' . $departmentId . '&semester_no=' . $semesterNo)) ?>" target="_blank" rel="noreferrer">Open Print View</a>
+                <a class="btn-primary report-card-print-button" href="<?= e(url('admin/report_card_print.php?department_id=' . $departmentId . '&semester_no=' . $semesterNo)) ?>" target="_blank" rel="noreferrer">Open Print View</a>
             <?php endif; ?>
         </div>
-        <form method="get" class="filters" style="margin-bottom:14px">
+        <form method="get" class="filters report-card-filters">
             <div class="form-group">
                 <label class="form-label" for="report-cards-dept">Department</label>
                 <select class="form-select" id="report-cards-dept" name="department_id">
@@ -42,8 +42,8 @@ render_dashboard_layout('Report Cards', 'admin', 'report_cards', 'admin/report_c
         </form>
 
         <?php if ($rows): ?>
-            <div class="table-wrap">
-                <table>
+            <div class="table-wrap report-card-table-wrap">
+                <table class="report-card-table">
                     <thead>
                     <tr>
                         <th>Enrollment</th>
@@ -59,12 +59,12 @@ render_dashboard_layout('Report Cards', 'admin', 'report_cards', 'admin/report_c
                         $student = $row['student'];
                         ?>
                         <tr>
-                            <td class="mono"><?= e($student['enrollment_no']) ?></td>
-                            <td><?= e($student['full_name']) ?></td>
-                            <td><?= e((string) $row['grand_total']) ?> / <?= e((string) $row['grand_max']) ?></td>
-                            <td><span class="badge <?= $row['attendance']['percentage'] >= 75 ? 'success' : ($row['attendance']['percentage'] >= 60 ? 'warning' : 'danger') ?>"><?= e((string) $row['attendance']['percentage']) ?>%</span></td>
-                            <td><span class="badge <?= $row['grade'] === 'F' ? 'danger' : ($row['grade'] === 'O' ? 'info' : 'success') ?>"><?= e($row['grade']) ?></span></td>
-                            <td><a class="btn-secondary" href="<?= e(url('admin/report_card_print.php?department_id=' . $departmentId . '&semester_no=' . $semesterNo . '&student_id=' . $student['id'])) ?>" target="_blank" rel="noreferrer">Print</a></td>
+                            <td data-label="Enrollment" class="mono"><?= e($student['enrollment_no']) ?></td>
+                            <td data-label="Name"><?= e($student['full_name']) ?></td>
+                            <td data-label="Total"><?= e((string) $row['grand_total']) ?> / <?= e((string) $row['grand_max']) ?></td>
+                            <td data-label="Attendance"><span class="badge <?= $row['attendance']['percentage'] >= 75 ? 'success' : ($row['attendance']['percentage'] >= 60 ? 'warning' : 'danger') ?>"><?= e((string) $row['attendance']['percentage']) ?>%</span></td>
+                            <td data-label="Grade"><span class="badge <?= $row['grade'] === 'F' ? 'danger' : ($row['grade'] === 'O' ? 'info' : 'success') ?>"><?= e($row['grade']) ?></span></td>
+                            <td data-label="Action" class="action-cell"><a class="btn-secondary report-card-print-link" href="<?= e(url('admin/report_card_print.php?department_id=' . $departmentId . '&semester_no=' . $semesterNo . '&student_id=' . $student['id'])) ?>" target="_blank" rel="noreferrer">Print</a></td>
                         </tr>
                     <?php endforeach; ?>
                     </tbody>
@@ -76,5 +76,3 @@ render_dashboard_layout('Report Cards', 'admin', 'report_cards', 'admin/report_c
     </article>
     <?php
 });
-
-

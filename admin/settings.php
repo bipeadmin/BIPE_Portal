@@ -4,10 +4,26 @@ declare(strict_types=1);
 require_once __DIR__ . '/../app/bootstrap.php';
 require_role('admin');
 
+$admin = require_current_admin();
+
 if (is_post()) {
     $action = (string) post('action');
 
     try {
+        if ($action === 'update_profile') {
+            $profileImagePath = store_profile_image_upload((array) ($_FILES['profile_image'] ?? []), 'admins', (string) ($admin['profile_image_path'] ?? ''));
+            update_admin_profile(
+                (int) $admin['id'],
+                trim((string) post('full_name')),
+                trim((string) post('email')),
+                trim((string) post('phone_number')),
+                $profileImagePath
+            );
+            update_current_user_session(['name' => trim((string) post('full_name'))]);
+            audit_log('admin', (string) (current_user()['username'] ?? 'admin'), 'PROFILE_UPDATE', 'Administrator profile updated');
+            flash('success', 'Administrator profile updated successfully.');
+        }
+
         if ($action === 'change_password') {
             $newPassword = (string) post('new_password');
             $confirmPassword = (string) post('confirm_password');
@@ -75,12 +91,69 @@ if (is_post()) {
     redirect_to('admin/settings.php');
 }
 
+$admin = require_current_admin();
+$profileImageUrl = profile_image_url($admin['profile_image_path'] ?? null);
 $markTypes = mark_type_rows();
 $lockedKeys = array_flip(locked_mark_keys());
 $departments = departments();
 
-render_dashboard_layout('Portal Settings', 'admin', 'settings', 'admin/settings.css', 'admin/settings.js', function () use ($markTypes, $lockedKeys, $departments): void {
+render_dashboard_layout('Portal Settings', 'admin', 'settings', 'admin/settings.css', 'admin/settings.js', function () use ($admin, $profileImageUrl, $markTypes, $lockedKeys, $departments): void {
     ?>
+    <section class="grid-2 admin-profile-grid">
+        <article class="data-card admin-profile-card">
+            <div class="admin-profile-panel">
+                <div class="admin-profile-avatar <?= $profileImageUrl ? 'has-image' : '' ?>">
+                    <?php if ($profileImageUrl): ?>
+                        <img src="<?= e($profileImageUrl) ?>" alt="<?= e($admin['full_name']) ?>">
+                    <?php else: ?>
+                        <?= e(profile_image_initial((string) $admin['full_name'])) ?>
+                    <?php endif; ?>
+                </div>
+                <h3 class="card-title"><?= e($admin['full_name']) ?></h3>
+                <p class="muted"><?= e($admin['email']) ?></p>
+                <p class="mono admin-profile-code"><?= e($admin['username']) ?></p>
+                <div class="admin-profile-meta">
+                    <div class="data-list-item"><strong>Mobile Number</strong><p class="muted"><?= e((string) ($admin['phone_number'] ?: 'Not added yet')) ?></p></div>
+                    <div class="data-list-item"><strong>Profile Image</strong><p class="muted"><?= $profileImageUrl ? 'Uploaded' : 'Not uploaded yet' ?></p></div>
+                </div>
+            </div>
+        </article>
+
+        <article class="data-card">
+            <div class="card-head">
+                <div>
+                    <p class="eyebrow">Admin Profile</p>
+                    <h3 class="card-title">Update account details</h3>
+                </div>
+            </div>
+            <form method="post" enctype="multipart/form-data" class="form-grid">
+                <input type="hidden" name="action" value="update_profile">
+                <div class="form-grid two">
+                    <div class="form-group">
+                        <label class="form-label" for="admin-full-name">Full Name</label>
+                        <input class="form-input" id="admin-full-name" name="full_name" value="<?= e($admin['full_name']) ?>" autocomplete="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="admin-email">Email</label>
+                        <input class="form-input" id="admin-email" name="email" type="email" value="<?= e($admin['email']) ?>" autocomplete="email" required>
+                    </div>
+                </div>
+                <div class="form-grid two">
+                    <div class="form-group">
+                        <label class="form-label" for="admin-phone">Mobile Number</label>
+                        <input class="form-input" id="admin-phone" name="phone_number" type="tel" value="<?= e((string) ($admin['phone_number'] ?? '')) ?>" autocomplete="tel" placeholder="Optional mobile number">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="admin-profile-image">Profile Image</label>
+                        <input class="form-input" id="admin-profile-image" type="file" name="profile_image" accept=".jpg,.jpeg,.png,.webp" data-file-input data-file-target="#admin-profile-file-name">
+                        <div class="file-hint" id="admin-profile-file-name"><?= $profileImageUrl ? 'Current image available' : 'No image selected' ?></div>
+                    </div>
+                </div>
+                <button class="btn-primary" type="submit">Save Profile</button>
+            </form>
+        </article>
+    </section>
+
     <section class="grid-2">
         <article class="data-card">
             <div class="card-head">
@@ -176,18 +249,6 @@ render_dashboard_layout('Portal Settings', 'admin', 'settings', 'admin/settings.
                 </table>
             </div>
         </article>
-
-        <!-- <article class="data-card">
-            <div class="card-head">
-                <div>
-                    <p class="eyebrow">OTP Delivery</p>
-                    <h3 class="card-title">Password reset behavior</h3>
-                </div>
-            </div>
-            <div class="stack">
-                <div class="data-list-item"><strong>Administrator email</strong><p class="muted">bipevns@gmail.com</p></div>
-            </div>
-        </article> -->
     </section>
 
     <article class="data-card">
@@ -251,6 +312,3 @@ render_dashboard_layout('Portal Settings', 'admin', 'settings', 'admin/settings.
     </article>
     <?php
 });
-
-
-

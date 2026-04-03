@@ -64,7 +64,7 @@ $holidays = holiday_rows($selectedDepartment > 0 ? $selectedDepartment : null);
 
 render_dashboard_layout('Attendance & Holiday Desk', 'admin', 'attendance', 'admin/attendance.css', 'admin/attendance.js', function () use ($departments, $selectedDepartment, $selectedDate, $summaryRows, $holidays): void {
     ?>
-    <section class="grid-2">
+    <section class="attendance-desk-stack">
         <article class="data-card">
             <div class="card-head">
                 <div>
@@ -90,8 +90,8 @@ render_dashboard_layout('Attendance & Holiday Desk', 'admin', 'attendance', 'adm
             </form>
 
             <?php if ($summaryRows): ?>
-                <div class="table-wrap">
-                    <table>
+                <div class="table-wrap attendance-snapshot-wrap">
+                    <table class="attendance-snapshot-table">
                         <thead>
                         <tr>
                             <th>Department</th>
@@ -107,12 +107,22 @@ render_dashboard_layout('Attendance & Holiday Desk', 'admin', 'attendance', 'adm
                             $present = (int) $row['present_count'];
                             $percentage = $total > 0 ? (int) round(($present / $total) * 100) : 0;
                             ?>
-                            <tr>
-                                <td><?= e($row['name']) ?></td>
-                                <td><?= e((string) $present) ?></td>
-                                <td><?= e((string) ((int) $row['absent_count'])) ?></td>
-                                <td><?= e((string) $total) ?></td>
-                                <td><?= e((string) $percentage) ?>%</td>
+                            <tr class="attendance-snapshot-row">
+                                <td class="attendance-department-cell" data-label="Department">
+                                    <span class="attendance-snapshot-name"><?= e($row['name']) ?></span>
+                                </td>
+                                <td class="attendance-snapshot-metric attendance-snapshot-present" data-label="Present">
+                                    <span class="attendance-snapshot-value"><?= e((string) $present) ?></span>
+                                </td>
+                                <td class="attendance-snapshot-metric attendance-snapshot-absent" data-label="Absent">
+                                    <span class="attendance-snapshot-value"><?= e((string) ((int) $row['absent_count'])) ?></span>
+                                </td>
+                                <td class="attendance-snapshot-metric attendance-snapshot-total" data-label="Total Marked">
+                                    <span class="attendance-snapshot-value"><?= e((string) $total) ?></span>
+                                </td>
+                                <td class="attendance-snapshot-metric attendance-snapshot-rate" data-label="Attendance %">
+                                    <span class="attendance-snapshot-value"><?= e((string) $percentage) ?>%</span>
+                                </td>
                             </tr>
                         <?php endforeach; ?>
                         </tbody>
@@ -188,8 +198,8 @@ render_dashboard_layout('Attendance & Holiday Desk', 'admin', 'attendance', 'adm
             </div>
         </div>
         <?php if ($holidays): ?>
-            <div class="table-wrap">
-                <table>
+            <div class="table-wrap attendance-snapshot-wrap">
+                    <table class="attendance-snapshot-table">
                     <thead>
                     <tr>
                         <th>From</th>
@@ -204,13 +214,13 @@ render_dashboard_layout('Attendance & Holiday Desk', 'admin', 'attendance', 'adm
                     <tbody>
                     <?php foreach ($holidays as $holiday): ?>
                         <tr>
-                            <td><?= e($holiday['event_date']) ?></td>
-                            <td><?= e((string) ($holiday['end_date'] ?? '-')) ?></td>
-                            <td><?= e((string) holiday_event_total_days($holiday)) ?></td>
-                            <td><span class="badge warning"><?= e($holiday['event_type']) ?></span></td>
-                            <td><?= e($holiday['title']) ?></td>
-                            <td><?= e($holiday['scope_type'] === 'all' ? 'All departments' : ($holiday['department_name'] ?? '-')) ?></td>
-                            <td>
+                            <td data-label="From"><?= e($holiday['event_date']) ?></td>
+                            <td data-label="To"><?= e((string) ($holiday['end_date'] ?? '-')) ?></td>
+                            <td data-label="Days"><?= e((string) holiday_event_total_days($holiday)) ?></td>
+                            <td data-label="Type"><span class="badge warning"><?= e($holiday['event_type']) ?></span></td>
+                            <td data-label="Title"><?= e($holiday['title']) ?></td>
+                            <td data-label="Scope"><?= e($holiday['scope_type'] === 'all' ? 'All departments' : ($holiday['department_name'] ?? '-')) ?></td>
+                            <td data-label="Action">
                                 <form method="post">
                                     <input type="hidden" name="action" value="delete_holiday">
                                     <input type="hidden" name="holiday_id" value="<?= e((string) $holiday['id']) ?>">
@@ -228,3 +238,7 @@ render_dashboard_layout('Attendance & Holiday Desk', 'admin', 'attendance', 'adm
     </article>
     <?php
 });
+
+
+
+

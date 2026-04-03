@@ -38,6 +38,7 @@ return [
     'uploads' => [
         'max_csv_bytes' => (int) (getenv('BIPE_V2_MAX_CSV_BYTES') ?: 2097152),
         'max_backup_bytes' => (int) (getenv('BIPE_V2_MAX_BACKUP_BYTES') ?: 5242880),
+        'max_image_bytes' => (int) (getenv('BIPE_V2_MAX_IMAGE_BYTES') ?: 2097152),
     ],
     'mail' => [
         'enabled' => $envBool('BIPE_V2_MAIL_ENABLED', false),
@@ -52,3 +53,4 @@ return [
         'cache' => $rootPath . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'cache',
     ],
 ];
+

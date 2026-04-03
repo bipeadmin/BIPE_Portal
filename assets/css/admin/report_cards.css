@@ -1,1 +1,120 @@
-.table-wrap td .btn-secondary { white-space: nowrap; }
+.role-admin .report-card-shell,
+.role-admin .report-card-table-wrap {
+  min-width: 0;
+}
+
+.role-admin .report-card-filters {
+  align-items: stretch;
+  margin-bottom: 14px;
+}
+
+.role-admin .report-card-print-button,
+.role-admin .report-card-filters .btn-primary,
+.role-admin .report-card-print-link {
+  white-space: nowrap;
+}
+
+.role-admin .report-card-table {
+  min-width: 780px;
+}
+
+.role-admin .report-card-table td {
+  overflow-wrap: anywhere;
+  vertical-align: top;
+}
+
+.role-admin .report-card-table th:last-child,
+.role-admin .report-card-table td:last-child {
+  width: 120px;
+}
+
+@media (max-width: 720px) {
+  .role-admin .report-card-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .role-admin .report-card-print-button,
+  .role-admin .report-card-filters .btn-primary {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .role-admin .report-card-filters {
+    display: grid;
+    gap: 12px;
+  }
+
+  .role-admin .report-card-filters .form-group,
+  .role-admin .report-card-filters .btn-primary {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .role-admin .report-card-table-wrap {
+    overflow-x: hidden;
+    overflow-y: visible;
+    border: none;
+    background: transparent;
+  }
+
+  .role-admin .report-card-table,
+  .role-admin .report-card-table thead,
+  .role-admin .report-card-table tbody,
+  .role-admin .report-card-table tr,
+  .role-admin .report-card-table th,
+  .role-admin .report-card-table td {
+    display: block;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .role-admin .report-card-table thead {
+    display: none;
+  }
+
+  .role-admin .report-card-table tbody {
+    display: grid;
+    gap: 12px;
+  }
+
+  .role-admin .report-card-table tbody tr {
+    overflow: hidden;
+    border: 1px solid rgba(30, 64, 175, 0.12);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .role-admin .report-card-table td {
+    display: grid;
+    grid-template-columns: minmax(112px, 42%) minmax(0, 1fr);
+    gap: 12px;
+    align-items: start;
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(30, 64, 175, 0.08);
+    text-align: left;
+  }
+
+  .role-admin .report-card-table td:last-child {
+    border-bottom: none;
+  }
+
+  .role-admin .report-card-table td::before {
+    content: attr(data-label);
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .role-admin .report-card-table td[data-label='Action'] {
+    grid-template-columns: 1fr;
+  }
+
+  .role-admin .report-card-print-link {
+    width: 100%;
+    justify-content: center;
+  }
+}

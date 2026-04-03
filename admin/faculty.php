@@ -139,8 +139,8 @@ render_dashboard_layout('Faculty Approval & Records', 'admin', 'faculty', 'admin
             </div>
         </div>
         <?php if ($groups['pending']): ?>
-            <div class="table-wrap">
-                <table>
+            <div class="table-wrap faculty-table-wrap faculty-card-table-wrap">
+                <table class="faculty-table faculty-card-table faculty-requests-table">
                     <thead>
                     <tr>
                         <th>Faculty ID</th>
@@ -154,12 +154,12 @@ render_dashboard_layout('Faculty Approval & Records', 'admin', 'faculty', 'admin
                     <tbody>
                     <?php foreach ($groups['pending'] as $teacher): ?>
                         <tr>
-                            <td class="mono"><?= e($teacher['teacher_code']) ?></td>
-                            <td><?= e($teacher['full_name']) ?></td>
-                            <td><?= e($teacher['department_name']) ?></td>
-                            <td><?= e($teacher['email']) ?></td>
-                            <td><?= e((string) $teacher['registered_at']) ?></td>
-                            <td>
+                            <td class="mono" data-label="Faculty ID"><?= e($teacher['teacher_code']) ?></td>
+                            <td data-label="Name"><?= e($teacher['full_name']) ?></td>
+                            <td data-label="Department"><?= e($teacher['department_name']) ?></td>
+                            <td class="faculty-email-cell" data-label="Email"><?= e($teacher['email']) ?></td>
+                            <td data-label="Registered"><?= e((string) $teacher['registered_at']) ?></td>
+                            <td data-label="Actions">
                                 <div class="actions-cell">
                                     <a class="btn-secondary" href="<?= e(url('admin/faculty.php?edit_id=' . $teacher['id'])) ?>">Edit</a>
                                     <form method="post">
@@ -184,7 +184,7 @@ render_dashboard_layout('Faculty Approval & Records', 'admin', 'faculty', 'admin
         <?php endif; ?>
     </article>
 
-    <section class="grid-2">
+    <section class="faculty-records-stack">
         <article class="data-card">
             <div class="card-head">
                 <div>
@@ -193,8 +193,8 @@ render_dashboard_layout('Faculty Approval & Records', 'admin', 'faculty', 'admin
                 </div>
             </div>
             <?php if ($groups['approved']): ?>
-                <div class="table-wrap">
-                    <table>
+                <div class="table-wrap faculty-table-wrap active-faculty-table-wrap">
+                    <table class="faculty-table active-faculty-table">
                         <thead>
                         <tr>
                             <th>Faculty ID</th>
@@ -207,11 +207,11 @@ render_dashboard_layout('Faculty Approval & Records', 'admin', 'faculty', 'admin
                         <tbody>
                         <?php foreach ($groups['approved'] as $teacher): ?>
                             <tr>
-                                <td class="mono"><?= e($teacher['teacher_code']) ?></td>
-                                <td><?= e($teacher['full_name']) ?></td>
-                                <td><?= e($teacher['department_name']) ?></td>
-                                <td><?= e($teacher['email']) ?></td>
-                                <td>
+                                <td class="mono" data-label="Faculty ID"><?= e($teacher['teacher_code']) ?></td>
+                                <td data-label="Name"><?= e($teacher['full_name']) ?></td>
+                                <td data-label="Department"><?= e($teacher['department_name']) ?></td>
+                                <td class="faculty-email-cell" data-label="Email"><?= e($teacher['email']) ?></td>
+                                <td data-label="Actions">
                                     <div class="actions-cell">
                                         <a class="btn-secondary" href="<?= e(url('admin/faculty.php?edit_id=' . $teacher['id'])) ?>">Edit</a>
                                         <form method="post">
@@ -245,8 +245,8 @@ render_dashboard_layout('Faculty Approval & Records', 'admin', 'faculty', 'admin
                 <?php endif; ?>
             </div>
             <?php if ($groups['rejected']): ?>
-                <div class="table-wrap">
-                    <table>
+                <div class="table-wrap faculty-table-wrap faculty-card-table-wrap faculty-rejected-table-wrap">
+                    <table class="faculty-table faculty-card-table faculty-rejected-table">
                         <thead>
                         <tr>
                             <th>Faculty ID</th>
@@ -258,10 +258,10 @@ render_dashboard_layout('Faculty Approval & Records', 'admin', 'faculty', 'admin
                         <tbody>
                         <?php foreach ($groups['rejected'] as $teacher): ?>
                             <tr>
-                                <td class="mono"><?= e($teacher['teacher_code']) ?></td>
-                                <td><?= e($teacher['full_name']) ?></td>
-                                <td><?= e($teacher['department_name']) ?></td>
-                                <td><?= e($teacher['email']) ?></td>
+                                <td class="mono" data-label="Faculty ID"><?= e($teacher['teacher_code']) ?></td>
+                                <td data-label="Name"><?= e($teacher['full_name']) ?></td>
+                                <td data-label="Department"><?= e($teacher['department_name']) ?></td>
+                                <td class="faculty-email-cell" data-label="Email"><?= e($teacher['email']) ?></td>
                             </tr>
                         <?php endforeach; ?>
                         </tbody>
@@ -274,5 +274,4 @@ render_dashboard_layout('Faculty Approval & Records', 'admin', 'faculty', 'admin
     </section>
     <?php
 });
-
 

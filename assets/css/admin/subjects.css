@@ -1,0 +1,161 @@
+.role-admin .subject-admin-grid,
+.role-admin .subject-upload-card,
+.role-admin .subject-filter-card,
+.role-admin .subject-directory-card,
+.role-admin .subject-directory-wrap {
+  min-width: 0;
+}
+
+.role-admin .subject-directory-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.role-admin .subject-upload-form,
+.role-admin .subject-filter-form {
+  align-items: stretch;
+}
+
+.role-admin .subject-upload-form .btn-primary,
+.role-admin .subject-filter-form .btn-primary {
+  min-height: 46px;
+}
+
+.role-admin .subject-filter-meta {
+  margin-top: 16px;
+}
+
+.role-admin .subject-directory-wrap {
+  max-height: clamp(420px, 64vh, 760px);
+  overflow-x: auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable both-edges;
+}
+
+.role-admin .subject-directory-wrap thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: rgba(241, 245, 249, 0.96);
+  backdrop-filter: blur(10px);
+}
+
+.role-admin .subject-directory-table {
+  width: 100%;
+  min-width: 880px;
+  table-layout: auto;
+}
+
+.role-admin .subject-directory-table td {
+  overflow-wrap: anywhere;
+  vertical-align: top;
+}
+
+.role-admin .subject-directory-table td strong {
+  display: block;
+  font-weight: 600;
+}
+
+.role-admin .department-code {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+@media (max-width: 720px) {
+  .role-admin .subject-upload-card .card-head,
+  .role-admin .subject-filter-card .card-head,
+  .role-admin .subject-directory-card .card-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .role-admin .subject-upload-card .btn-secondary,
+  .role-admin .subject-upload-form .btn-primary,
+  .role-admin .subject-filter-form .btn-primary {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .role-admin .subject-upload-form,
+  .role-admin .subject-filter-form {
+    display: grid;
+    gap: 12px;
+  }
+
+  .role-admin .subject-upload-form .form-group,
+  .role-admin .subject-filter-form .form-group,
+  .role-admin .subject-upload-form .btn-primary,
+  .role-admin .subject-filter-form .btn-primary {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .role-admin .subject-directory-wrap {
+    max-height: min(68vh, 620px);
+    overflow-x: hidden;
+    overflow-y: auto;
+    border: none;
+    background: transparent;
+  }
+
+  .role-admin .subject-directory-table,
+  .role-admin .subject-directory-table thead,
+  .role-admin .subject-directory-table tbody,
+  .role-admin .subject-directory-table tr,
+  .role-admin .subject-directory-table th,
+  .role-admin .subject-directory-table td {
+    display: block;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .role-admin .subject-directory-table thead {
+    display: none;
+  }
+
+  .role-admin .subject-directory-table tbody {
+    display: grid;
+    gap: 12px;
+  }
+
+  .role-admin .subject-directory-table tbody tr {
+    overflow: hidden;
+    border: 1px solid rgba(30, 64, 175, 0.12);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .role-admin .subject-directory-table td {
+    display: grid;
+    grid-template-columns: minmax(118px, 44%) minmax(0, 1fr);
+    gap: 12px;
+    align-items: start;
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(30, 64, 175, 0.08);
+    text-align: left;
+  }
+
+  .role-admin .subject-directory-table td:last-child {
+    border-bottom: none;
+  }
+
+  .role-admin .subject-directory-table td::before {
+    content: attr(data-label);
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .role-admin .subject-directory-wrap thead th {
+    position: static;
+    backdrop-filter: none;
+  }
+}

@@ -39,22 +39,22 @@ $totals = [
 
 render_dashboard_layout('Analytics & Reports', 'admin', 'reports', 'admin/reports.css', 'admin/reports.js', function () use ($departmentReports, $totals): void {
     ?>
-    <section class="stats-grid">
+    <section class="stats-grid report-stats">
         <article class="stat-card"><p class="eyebrow">Holiday Events</p><h3 class="stat-value"><?= e((string) $totals['holidays']) ?></h3><p class="stat-label">Calendar overrides in current year</p></article>
         <article class="stat-card"><p class="eyebrow">Attendance Sessions</p><h3 class="stat-value"><?= e((string) $totals['attendance_sessions']) ?></h3><p class="stat-label">Recorded teaching days</p></article>
         <article class="stat-card"><p class="eyebrow">Mark Uploads</p><h3 class="stat-value"><?= e((string) $totals['mark_uploads']) ?></h3><p class="stat-label">Stored exam upload records</p></article>
         <article class="stat-card"><p class="eyebrow">Assignments</p><h3 class="stat-value"><?= e((string) $totals['assignments']) ?></h3><p class="stat-label">Tracked assignment sets</p></article>
     </section>
 
-    <article class="data-card">
+    <article class="data-card department-report-card">
         <div class="card-head">
             <div>
                 <p class="eyebrow">Department Performance</p>
                 <h3 class="card-title">Cross-department academic indicators</h3>
             </div>
         </div>
-        <div class="table-wrap">
-            <table>
+        <div class="table-wrap department-report-wrap">
+            <table class="department-report-table">
                 <thead>
                 <tr>
                     <th>Department</th>
@@ -68,12 +68,12 @@ render_dashboard_layout('Analytics & Reports', 'admin', 'reports', 'admin/report
                 <tbody>
                 <?php foreach ($departmentReports as $row): ?>
                     <tr>
-                        <td><?= e($row['name']) ?></td>
-                        <td><?= e((string) $row['students_total']) ?></td>
-                        <td><?= e((string) $row['faculty_total']) ?></td>
-                        <td><?= e((string) $row['attendance_pct']) ?>%</td>
-                        <td><?= e((string) $row['marks_pct']) ?>%</td>
-                        <td><?= e((string) $row['assignment_pct']) ?>%</td>
+                        <td data-label="Department"><strong><?= e($row['name']) ?></strong><span class="department-code"><?= e($row['short_name']) ?></span></td>
+                        <td data-label="Students"><?= e((string) $row['students_total']) ?></td>
+                        <td data-label="Faculty"><?= e((string) $row['faculty_total']) ?></td>
+                        <td data-label="Attendance"><span class="badge <?= $row['attendance_pct'] >= 75 ? 'success' : ($row['attendance_pct'] >= 60 ? 'warning' : 'danger') ?>"><?= e((string) $row['attendance_pct']) ?>%</span></td>
+                        <td data-label="Average Marks"><span class="badge <?= $row['marks_pct'] >= 60 ? 'success' : ($row['marks_pct'] >= 40 ? 'warning' : 'danger') ?>"><?= e((string) $row['marks_pct']) ?>%</span></td>
+                        <td data-label="Assignment Submit"><span class="badge <?= $row['assignment_pct'] >= 60 ? 'success' : ($row['assignment_pct'] >= 40 ? 'warning' : 'danger') ?>"><?= e((string) $row['assignment_pct']) ?>%</span></td>
                     </tr>
                 <?php endforeach; ?>
                 </tbody>
@@ -82,6 +82,3 @@ render_dashboard_layout('Analytics & Reports', 'admin', 'reports', 'admin/report
     </article>
     <?php
 });
-
-
-

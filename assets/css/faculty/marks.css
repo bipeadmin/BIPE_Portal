@@ -1,1 +1,278 @@
-.role-teacher .table-wrap table { min-width: 860px; }
+.role-teacher .marks-entry-grid {
+  align-items: start;
+}
+
+.role-teacher .marks-entry-grid > .data-card,
+.role-teacher .marks-sheet-wrap,
+.role-teacher .marks-upload-list-wrap {
+  min-width: 0;
+}
+
+.role-teacher .marks-limit-box {
+  margin-bottom: 14px;
+}
+
+.role-teacher .marks-sheet-wrap {
+  max-height: clamp(360px, 68vh, 560px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.role-teacher .marks-sheet-table,
+.role-teacher .marks-upload-list-table {
+  width: 100%;
+  min-width: 0;
+  table-layout: fixed;
+}
+
+.role-teacher .marks-sheet-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: rgba(240, 249, 255, 0.98);
+}
+
+.role-teacher .marks-sheet-table th,
+.role-teacher .marks-sheet-table td,
+.role-teacher .marks-upload-list-table th,
+.role-teacher .marks-upload-list-table td {
+  vertical-align: top;
+}
+
+.role-teacher .marks-sheet-table td,
+.role-teacher .marks-upload-list-table td {
+  overflow-wrap: anywhere;
+}
+
+.role-teacher .marks-sheet-table th:nth-child(1),
+.role-teacher .marks-sheet-table td:nth-child(1) {
+  width: 140px;
+}
+
+.role-teacher .marks-sheet-table th:nth-child(3),
+.role-teacher .marks-sheet-table td:nth-child(3) {
+  width: 140px;
+}
+
+.role-teacher .marks-sheet-table th:nth-child(4),
+.role-teacher .marks-sheet-table td:nth-child(4) {
+  width: 92px;
+  text-align: center;
+}
+
+.role-teacher .marks-sheet-table td:nth-child(4) {
+  vertical-align: middle;
+}
+
+.role-teacher .marks-name-cell {
+  transition: color 0.2s ease;
+}
+
+.role-teacher .marks-value-cell {
+  position: relative;
+}
+
+.role-teacher .marks-input-wrap {
+  display: block;
+}
+
+.role-teacher .marks-sheet-table .form-input {
+  padding: 10px 12px;
+}
+
+.role-teacher .marks-sheet-table input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary);
+}
+
+.role-teacher .marks-absent-flag {
+  display: none;
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: rgba(220, 38, 38, 0.1);
+  color: var(--danger);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+}
+
+.role-teacher .marks-inline-warning {
+  min-height: 16px;
+  margin-top: 6px;
+  color: var(--danger);
+  font-size: 12px;
+}
+
+.role-teacher .marks-row.is-absent .marks-name-cell {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.role-teacher .marks-row.is-absent .marks-input-wrap,
+.role-teacher .marks-row.is-absent .marks-inline-warning {
+  display: none;
+}
+
+.role-teacher .marks-row.is-absent .marks-absent-flag {
+  display: inline-flex;
+}
+
+.role-teacher .marks-upload-list-table th:nth-child(3),
+.role-teacher .marks-upload-list-table td:nth-child(3) {
+  width: 110px;
+}
+
+.role-teacher .marks-upload-list-table th:nth-child(5),
+.role-teacher .marks-upload-list-table td:nth-child(5) {
+  width: 130px;
+}
+
+.role-teacher .marks-csv-form {
+  gap: 14px;
+  align-content: start;
+}
+
+.role-teacher .marks-entry-grid > .data-card:last-child {
+  align-self: start;
+}
+
+.role-teacher .marks-csv-form .notice-box {
+  margin: 0;
+}
+
+.role-teacher .marks-csv-form .btn-primary {
+  justify-self: start;
+}
+
+@media (max-width: 1100px) {
+  .role-teacher .marks-sheet-table,
+  .role-teacher .marks-upload-list-table {
+    table-layout: auto;
+  }
+}
+
+@media (max-width: 720px) {
+  .role-teacher .marks-entry-grid .card-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .role-teacher .marks-entry-grid .card-head .btn-secondary,
+  .role-teacher .marks-entry-grid .filters .btn-primary,
+  .role-teacher .marks-manual-form > .btn-primary,
+  .role-teacher .marks-csv-form > .btn-primary {
+    width: 100%;
+  }
+
+  .role-teacher .marks-sheet-wrap {
+    max-height: min(72vh, 520px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    border: none;
+    background: transparent;
+  }
+
+  .role-teacher .marks-upload-list-wrap {
+    overflow-x: visible;
+    border: none;
+    background: transparent;
+  }
+
+  .role-teacher .marks-sheet-table,
+  .role-teacher .marks-sheet-table thead,
+  .role-teacher .marks-sheet-table tbody,
+  .role-teacher .marks-sheet-table tr,
+  .role-teacher .marks-sheet-table th,
+  .role-teacher .marks-sheet-table td,
+  .role-teacher .marks-upload-list-table,
+  .role-teacher .marks-upload-list-table thead,
+  .role-teacher .marks-upload-list-table tbody,
+  .role-teacher .marks-upload-list-table tr,
+  .role-teacher .marks-upload-list-table th,
+  .role-teacher .marks-upload-list-table td {
+    display: block;
+    width: 100% !important;
+  }
+
+  .role-teacher .marks-sheet-table,
+  .role-teacher .marks-upload-list-table {
+    table-layout: auto;
+    background: transparent;
+  }
+
+  .role-teacher .marks-sheet-table thead,
+  .role-teacher .marks-upload-list-table thead {
+    display: none;
+  }
+
+  .role-teacher .marks-sheet-table tbody,
+  .role-teacher .marks-upload-list-table tbody {
+    display: grid;
+    gap: 12px;
+  }
+
+  .role-teacher .marks-sheet-table tbody tr,
+  .role-teacher .marks-upload-list-table tbody tr {
+    overflow: hidden;
+    border: 1px solid rgba(30, 64, 175, 0.12);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .role-teacher .marks-sheet-table td,
+  .role-teacher .marks-upload-list-table td {
+    display: grid;
+    grid-template-columns: minmax(110px, 44%) minmax(0, 1fr);
+    gap: 12px;
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(30, 64, 175, 0.07);
+    text-align: left;
+  }
+
+  .role-teacher .marks-sheet-table td:last-child,
+  .role-teacher .marks-upload-list-table td:last-child {
+    border-bottom: none;
+  }
+
+  .role-teacher .marks-sheet-table td::before,
+  .role-teacher .marks-upload-list-table td::before {
+    content: attr(data-label);
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .role-teacher .marks-value-cell {
+    align-items: start;
+  }
+
+  .role-teacher .marks-sheet-table td[data-label='Marks'] .form-input {
+    width: 100%;
+  }
+
+  .role-teacher .marks-row.is-absent .marks-value-cell::before {
+    color: var(--danger);
+  }
+
+  .role-teacher .marks-absent-cell {
+    align-items: center;
+  }
+
+  .role-teacher .marks-absent-cell input[type='checkbox'] {
+    justify-self: start;
+  }
+
+  .role-teacher .marks-upload-list-table td[data-label='Action'] {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .role-teacher .marks-upload-list-table td[data-label='Action'] form,
+  .role-teacher .marks-upload-list-table td[data-label='Action'] button {
+    width: 100%;
+  }
+}

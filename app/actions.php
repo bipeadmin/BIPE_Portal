@@ -16,6 +16,11 @@ function department_by_id(int $id): ?array
     return query_one('SELECT * FROM departments WHERE id = :id', ['id' => $id]);
 }
 
+function admin_by_id(int $id): ?array
+{
+    return query_one('SELECT * FROM admins WHERE id = :id', ['id' => $id]);
+}
+
 function teacher_by_id(int $id): ?array
 {
     return query_one(
@@ -36,6 +41,18 @@ function student_by_id(int $id): ?array
          WHERE s.id = :id',
         ['id' => $id]
     );
+}
+
+function require_current_admin(): array
+{
+    $admin = admin_by_id((int) (current_user()['id'] ?? 0));
+    if (!$admin) {
+        logout_session();
+        flash('error', 'Your administrator account is no longer available. Please login again.');
+        redirect_to('admin/login.php');
+    }
+
+    return $admin;
 }
 
 function require_current_teacher(): array
@@ -86,20 +103,27 @@ function parse_semester_no(string $value, ?int $yearLevel = null): int
     };
 }
 
-function add_or_update_student(string $name, string $enrollmentNo, int $departmentId, int $yearLevel, int $semesterNo): void
+function add_or_update_student(string $name, string $enrollmentNo, int $departmentId, int $yearLevel, int $semesterNo, ?string $phoneNumber = null): void
 {
+    $phoneNumber = normalize_phone_number($phoneNumber);
     $existing = query_one('SELECT id FROM students WHERE enrollment_no = :enrollment_no', ['enrollment_no' => strtoupper($enrollmentNo)]);
 
     if ($existing) {
         execute_sql(
             'UPDATE students
-             SET full_name = :full_name, department_id = :department_id, year_level = :year_level, semester_no = :semester_no, updated_at = NOW()
+             SET full_name = :full_name,
+                 department_id = :department_id,
+                 year_level = :year_level,
+                 semester_no = :semester_no,
+                 phone_number = :phone_number,
+                 updated_at = NOW()
              WHERE id = :id',
             [
                 'full_name' => strtoupper(trim($name)),
                 'department_id' => $departmentId,
                 'year_level' => $yearLevel,
                 'semester_no' => $semesterNo,
+                'phone_number' => $phoneNumber,
                 'id' => $existing['id'],
             ]
         );
@@ -108,12 +132,13 @@ function add_or_update_student(string $name, string $enrollmentNo, int $departme
     }
 
     execute_sql(
-        'INSERT INTO students (department_id, enrollment_no, full_name, year_level, semester_no)
-         VALUES (:department_id, :enrollment_no, :full_name, :year_level, :semester_no)',
+        'INSERT INTO students (department_id, enrollment_no, full_name, phone_number, year_level, semester_no)
+         VALUES (:department_id, :enrollment_no, :full_name, :phone_number, :year_level, :semester_no)',
         [
             'department_id' => $departmentId,
             'enrollment_no' => strtoupper($enrollmentNo),
             'full_name' => strtoupper(trim($name)),
+            'phone_number' => $phoneNumber,
             'year_level' => $yearLevel,
             'semester_no' => $semesterNo,
         ]
@@ -170,6 +195,14 @@ function bulk_import_students_csv(string $tmpName): array
         }
     }
 
+    $phoneIndex = null;
+    foreach (['phone', 'phone number', 'mobile', 'mobile number'] as $choice) {
+        if (array_key_exists($choice, $normalized)) {
+            $phoneIndex = $normalized[$choice];
+            break;
+        }
+    }
+
     $departmentLookup = [];
     foreach (departments() as $department) {
         $departmentLookup[strtolower($department['name'])] = $department;
@@ -192,6 +225,7 @@ function bulk_import_students_csv(string $tmpName): array
             $departmentKey = strtolower(trim((string) ($row[$mapped['department']] ?? '')));
             $yearLevel = parse_year_level((string) ($row[$mapped['year']] ?? ''));
             $semesterNo = parse_semester_no((string) ($semesterIndex !== null ? ($row[$semesterIndex] ?? '') : ''), $yearLevel);
+            $phoneNumber = $phoneIndex !== null ? trim((string) ($row[$phoneIndex] ?? '')) : '';
 
             if ($name === '' || $enrollment === '' || $departmentKey === '') {
                 continue;
@@ -203,7 +237,7 @@ function bulk_import_students_csv(string $tmpName): array
             }
 
             $existing = query_one('SELECT id FROM students WHERE enrollment_no = :enrollment_no', ['enrollment_no' => $enrollment]);
-            add_or_update_student($name, $enrollment, (int) $department['id'], $yearLevel, $semesterNo);
+            add_or_update_student($name, $enrollment, (int) $department['id'], $yearLevel, $semesterNo, $phoneNumber);
             $existing ? $updated++ : $inserted++;
         }
 
@@ -217,6 +251,240 @@ function bulk_import_students_csv(string $tmpName): array
     fclose($handle);
 
     return ['inserted' => $inserted, 'updated' => $updated];
+}
+
+function student_directory_rows(?int $departmentId = null, ?int $yearLevel = null, ?int $semesterNo = null, string $search = ''): array
+{
+    $sql = 'SELECT s.*, d.name AS department_name, d.short_name
+            FROM students s
+            INNER JOIN departments d ON d.id = s.department_id
+            WHERE 1 = 1';
+    $params = [];
+
+    if ($departmentId !== null && $departmentId > 0) {
+        $sql .= ' AND s.department_id = :department_id';
+        $params['department_id'] = $departmentId;
+    }
+    if ($yearLevel !== null && $yearLevel > 0) {
+        $sql .= ' AND s.year_level = :year_level';
+        $params['year_level'] = $yearLevel;
+    }
+    if ($semesterNo !== null && $semesterNo > 0) {
+        $sql .= ' AND s.semester_no = :semester_no';
+        $params['semester_no'] = $semesterNo;
+    }
+    if (trim($search) !== '') {
+        $sql .= ' AND (
+            s.full_name LIKE :search OR
+            s.enrollment_no LIKE :search OR
+            COALESCE(s.email, "") LIKE :search OR
+            COALESCE(s.phone_number, "") LIKE :search
+        )';
+        $params['search'] = '%' . trim($search) . '%';
+    }
+
+    $sql .= ' ORDER BY d.name ASC, s.year_level DESC, s.semester_no DESC, s.full_name ASC';
+
+    return query_all($sql, $params);
+}
+
+function add_or_update_subject(string $subjectCode, string $subjectName, int $departmentId, int $semesterNo): string
+{
+    $subjectCode = strtoupper(trim($subjectCode));
+    $subjectName = trim((string) preg_replace('/\s+/', ' ', $subjectName));
+
+    if ($departmentId <= 0) {
+        throw new RuntimeException('Choose a department before saving subjects.');
+    }
+    if (!in_array($semesterNo, semester_numbers(), true)) {
+        throw new RuntimeException('Choose a valid semester before saving subjects.');
+    }
+    if ($subjectCode === '' || $subjectName === '') {
+        throw new RuntimeException('Subject code and subject name are both required.');
+    }
+
+    $matches = query_all(
+        'SELECT id, subject_code, subject_name
+         FROM subjects
+         WHERE department_id = :department_id AND semester_no = :semester_no
+           AND (subject_code = :subject_code OR subject_name = :subject_name)',
+        [
+            'department_id' => $departmentId,
+            'semester_no' => $semesterNo,
+            'subject_code' => $subjectCode,
+            'subject_name' => $subjectName,
+        ]
+    );
+
+    $matchedIds = array_values(array_unique(array_map(static fn (array $row): int => (int) $row['id'], $matches)));
+    if (count($matchedIds) > 1) {
+        throw new RuntimeException('Conflicting subject code/name found for ' . $subjectCode . '. Review the existing subject list before importing again.');
+    }
+
+    if ($matchedIds) {
+        execute_sql(
+            'UPDATE subjects
+             SET subject_code = :subject_code,
+                 subject_name = :subject_name
+             WHERE id = :id',
+            [
+                'subject_code' => $subjectCode,
+                'subject_name' => $subjectName,
+                'id' => $matchedIds[0],
+            ]
+        );
+
+        return 'updated';
+    }
+
+    execute_sql(
+        'INSERT INTO subjects (department_id, semester_no, subject_code, subject_name)
+         VALUES (:department_id, :semester_no, :subject_code, :subject_name)',
+        [
+            'department_id' => $departmentId,
+            'semester_no' => $semesterNo,
+            'subject_code' => $subjectCode,
+            'subject_name' => $subjectName,
+        ]
+    );
+
+    return 'inserted';
+}
+
+function bulk_import_subjects_csv(string $tmpName, int $departmentId, int $yearLevel, int $semesterNo): array
+{
+    if ($departmentId <= 0) {
+        throw new RuntimeException('Select a department before importing subjects.');
+    }
+    if ($yearLevel <= 0) {
+        throw new RuntimeException('Select a year before importing subjects.');
+    }
+    if (!in_array($semesterNo, semester_numbers(), true)) {
+        throw new RuntimeException('Select a valid semester before importing subjects.');
+    }
+    if ($semesterNo !== ($yearLevel * 2)) {
+        throw new RuntimeException('Selected year and semester do not match. Please review the class filters and try again.');
+    }
+
+    $handle = fopen($tmpName, 'rb');
+    if (!$handle) {
+        throw new RuntimeException('Unable to read the uploaded subject CSV file.');
+    }
+
+    $header = fgetcsv($handle);
+    if (!$header) {
+        fclose($handle);
+        throw new RuntimeException('The subject CSV file is empty.');
+    }
+
+    $normalized = [];
+    foreach ($header as $index => $column) {
+        $key = strtolower(trim((string) $column));
+        $key = preg_replace('/^\xEF\xBB\xBF/', '', $key) ?? $key;
+        $normalized[$key] = $index;
+    }
+
+    $required = [
+        'subject code' => ['subject code', 'code', 'subject_code'],
+        'subject name' => ['subject name', 'name', 'subject', 'subject_name'],
+    ];
+
+    $mapped = [];
+    foreach ($required as $target => $choices) {
+        $found = null;
+        foreach ($choices as $choice) {
+            if (array_key_exists($choice, $normalized)) {
+                $found = $normalized[$choice];
+                break;
+            }
+        }
+
+        if ($found === null) {
+            fclose($handle);
+            throw new RuntimeException('CSV must contain Subject Code and Subject Name columns.');
+        }
+
+        $mapped[$target] = $found;
+    }
+
+    $inserted = 0;
+    $updated = 0;
+
+    db()->beginTransaction();
+    try {
+        while (($row = fgetcsv($handle)) !== false) {
+            if (count(array_filter($row, static fn ($value) => trim((string) $value) !== '')) === 0) {
+                continue;
+            }
+
+            $subjectCode = trim((string) ($row[$mapped['subject code']] ?? ''));
+            $subjectName = trim((string) ($row[$mapped['subject name']] ?? ''));
+            if ($subjectCode === '' && $subjectName === '') {
+                continue;
+            }
+            if ($subjectCode === '' || $subjectName === '') {
+                throw new RuntimeException('Each CSV row must include both subject code and subject name.');
+            }
+
+            $result = add_or_update_subject($subjectCode, $subjectName, $departmentId, $semesterNo);
+            if ($result === 'inserted') {
+                $inserted++;
+            } else {
+                $updated++;
+            }
+        }
+
+        db()->commit();
+    } catch (Throwable $exception) {
+        db()->rollBack();
+        fclose($handle);
+        throw $exception;
+    }
+
+    fclose($handle);
+
+    return ['inserted' => $inserted, 'updated' => $updated];
+}
+
+function subject_directory_rows(?int $departmentId = null, ?int $yearLevel = null, ?int $semesterNo = null, string $search = ''): array
+{
+    $sql = 'SELECT s.*, d.name AS department_name, d.short_name,
+                   (s.semester_no DIV 2) AS year_level,
+                   COALESCE(sc.total_students, 0) AS student_count
+            FROM subjects s
+            INNER JOIN departments d ON d.id = s.department_id
+            LEFT JOIN (
+                SELECT department_id, semester_no, COUNT(*) AS total_students
+                FROM students
+                GROUP BY department_id, semester_no
+            ) sc ON sc.department_id = s.department_id AND sc.semester_no = s.semester_no
+            WHERE 1 = 1';
+    $params = [];
+
+    if ($departmentId !== null && $departmentId > 0) {
+        $sql .= ' AND s.department_id = :department_id';
+        $params['department_id'] = $departmentId;
+    }
+    if ($semesterNo !== null && $semesterNo > 0) {
+        $sql .= ' AND s.semester_no = :semester_no';
+        $params['semester_no'] = $semesterNo;
+    } elseif ($yearLevel !== null && $yearLevel > 0) {
+        $sql .= ' AND s.semester_no = :year_semester';
+        $params['year_semester'] = $yearLevel * 2;
+    }
+    if (trim($search) !== '') {
+        $sql .= ' AND (
+            s.subject_code LIKE :search OR
+            s.subject_name LIKE :search OR
+            d.name LIKE :search OR
+            d.short_name LIKE :search
+        )';
+        $params['search'] = '%' . trim($search) . '%';
+    }
+
+    $sql .= ' ORDER BY d.name ASC, s.semester_no ASC, s.subject_code ASC, s.subject_name ASC';
+
+    return query_all($sql, $params);
 }
 
 function faculty_groups(): array
@@ -884,6 +1152,9 @@ function reset_portal(): void
         throw $exception;
     }
 }
+
+
+
 
 
 

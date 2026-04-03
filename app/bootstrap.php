@@ -36,6 +36,8 @@ require_once __DIR__ . '/layout.php';
 require_once __DIR__ . '/portal_features.php';
 require_once __DIR__ . '/error_renderer.php';
 
+ensure_runtime_schema_support();
+
 apply_security_headers();
 enforce_session_timeout();
 
@@ -58,4 +60,5 @@ set_exception_handler(static function (Throwable $exception): void {
 
     render_error_response(500, get_class($exception), $message);
 });
+
 

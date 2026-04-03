@@ -55,6 +55,7 @@ function nav_items(string $role): array
             'faculty' => ['label' => 'Faculty', 'path' => 'admin/faculty.php'],
             'attendance' => ['label' => 'Attendance', 'path' => 'admin/attendance.php'],
             'marks' => ['label' => 'Marks', 'path' => 'admin/marks.php'],
+            'subjects' => ['label' => 'Subjects', 'path' => 'admin/subjects.php'],
             'assignments' => ['label' => 'Assignments', 'path' => 'admin/assignments.php'],
             'reports' => ['label' => 'Reports', 'path' => 'admin/reports.php'],
             'report_cards' => ['label' => 'Report Cards', 'path' => 'admin/report_cards.php'],
@@ -66,6 +67,7 @@ function nav_items(string $role): array
             'dashboard' => ['label' => 'Dashboard', 'path' => 'faculty/dashboard.php'],
             'attendance' => ['label' => 'Mark Attendance', 'path' => 'faculty/attendance.php'],
             'records' => ['label' => 'Attendance Records', 'path' => 'faculty/records.php'],
+            'students' => ['label' => 'Students', 'path' => 'faculty/students.php'],
             'marks' => ['label' => 'Upload Marks', 'path' => 'faculty/marks.php'],
             'view_marks' => ['label' => 'View Marks', 'path' => 'faculty/view_marks.php'],
             'assignments' => ['label' => 'Assignments', 'path' => 'faculty/assignments.php'],
@@ -168,6 +170,9 @@ function render_auth_layout(string $title, string $subtitle, string $pageCss, st
     <?php
     render_foot($pageJs);
 }
+
+
+
 
 
 

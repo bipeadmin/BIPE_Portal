@@ -24,9 +24,10 @@ render_dashboard_layout('Faculty Dashboard', 'teacher', 'dashboard', 'faculty/da
             <div class="card-head"><div><p class="eyebrow">Quick Links</p><h3 class="card-title">Common faculty tasks</h3></div></div>
             <div class="data-list">
                 <a class="data-list-item" href="<?= e(url('faculty/attendance.php')) ?>"><strong>Mark attendance</strong><p class="muted">Create or update the daily attendance sheet.</p></a>
+                <a class="data-list-item" href="<?= e(url('faculty/students.php')) ?>"><strong>Browse students</strong><p class="muted">View student details across all departments with filters.</p></a>
                 <a class="data-list-item" href="<?= e(url('faculty/marks.php')) ?>"><strong>Upload marks</strong><p class="muted">Enter internal marks by subject and mark type.</p></a>
                 <a class="data-list-item" href="<?= e(url('faculty/assignments.php')) ?>"><strong>Track assignments</strong><p class="muted">Update submitted and pending assignment status.</p></a>
-                <a class="data-list-item" href="<?= e(url('faculty/profile.php')) ?>"><strong>My profile</strong><p class="muted">Update your email, name, and password.</p></a>
+                <a class="data-list-item" href="<?= e(url('faculty/profile.php')) ?>"><strong>My profile</strong><p class="muted">Update your photo, phone, email, and password.</p></a>
             </div>
         </article>
 
@@ -61,5 +62,3 @@ render_dashboard_layout('Faculty Dashboard', 'teacher', 'dashboard', 'faculty/da
     </section>
     <?php
 });
-
-

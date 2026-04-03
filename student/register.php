@@ -20,11 +20,14 @@ if (is_post()) {
 
     try {
         rate_limit_or_fail('register_student:' . strtolower(trim((string) post('email'))), 5, 900);
+        $profileImagePath = store_profile_image_upload((array) ($_FILES['profile_image'] ?? []), 'students');
         $registered = register_student_account_with_email(
             trim((string) post('enrollment_no')),
             (int) post('department_id'),
             trim((string) post('email')),
-            $password
+            $password,
+            trim((string) post('phone_number')),
+            $profileImagePath
         );
 
         if ($registered) {
@@ -42,7 +45,7 @@ if (is_post()) {
 
 render_auth_layout('Student Registration', 'Activate a student account using the enrollment number already stored in the portal database.', 'student/register.css', 'student/register.js', function () use ($departments): void {
     ?>
-    <form method="post" class="form-grid">
+    <form method="post" enctype="multipart/form-data" class="form-grid">
         <div class="form-grid two">
             <div class="form-group">
                 <label class="form-label" for="student-enrollment">Enrollment Number</label>
@@ -58,9 +61,20 @@ render_auth_layout('Student Registration', 'Activate a student account using the
                 </select>
             </div>
         </div>
+        <div class="form-grid two">
+            <div class="form-group">
+                <label class="form-label" for="student-email-register">Email</label>
+                <input class="form-input" id="student-email-register" name="email" type="email" autocomplete="email" placeholder="student@example.com" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="student-phone-register">Mobile Number</label>
+                <input class="form-input" id="student-phone-register" name="phone_number" type="tel" autocomplete="tel" placeholder="Optional mobile number">
+            </div>
+        </div>
         <div class="form-group">
-            <label class="form-label" for="student-email-register">Email</label>
-            <input class="form-input" id="student-email-register" name="email" type="email" autocomplete="email" placeholder="student@example.com" required>
+            <label class="form-label" for="student-profile-image">Profile Image</label>
+            <input class="form-input" id="student-profile-image" type="file" name="profile_image" accept=".jpg,.jpeg,.png,.webp" data-file-input data-file-target="#student-profile-file-name">
+            <div class="file-hint" id="student-profile-file-name">No image selected</div>
         </div>
         <div class="form-grid two">
             <div class="form-group">
@@ -72,7 +86,7 @@ render_auth_layout('Student Registration', 'Activate a student account using the
                 <input class="form-input" id="student-register-password-confirm" name="confirm_password" type="password" autocomplete="new-password" required>
             </div>
         </div>
-        <div class="notice-box">Only roster entries imported into MySQL can register. The email saved here will be used for OTP-based password reset.</div>
+        <div class="notice-box">Mobile number aur profile image optional hain. Email saved here will be used for OTP-based password reset.</div>
         <div class="form-actions">
             <button class="btn-primary" type="submit">Activate Account</button>
             <a class="btn-secondary" href="<?= e(url('student/login.php')) ?>">Back to Login</a>

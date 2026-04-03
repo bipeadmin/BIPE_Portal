@@ -118,6 +118,15 @@ function current_user(): ?array
     return is_array($user) ? $user : null;
 }
 
+function update_current_user_session(array $updates): void
+{
+    if (!isset($_SESSION['auth']) || !is_array($_SESSION['auth'])) {
+        return;
+    }
+
+    $_SESSION['auth'] = array_merge($_SESSION['auth'], $updates);
+}
+
 function current_role(): ?string
 {
     return current_user()['role'] ?? null;
@@ -376,6 +385,44 @@ function ensure_directory(string $path): void
     }
 }
 
+function schema_column_exists(string $table, string $column): bool
+{
+    return (bool) query_value(
+        'SELECT COUNT(*)
+         FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table_name AND COLUMN_NAME = :column_name',
+        ['table_name' => $table, 'column_name' => $column]
+    );
+}
+
+function ensure_runtime_schema_support(): void
+{
+    static $done = false;
+    if ($done) {
+        return;
+    }
+    $done = true;
+
+    $columnDefinitions = [
+        ['admins', 'phone_number', 'ALTER TABLE admins ADD COLUMN phone_number VARCHAR(20) DEFAULT NULL AFTER email'],
+        ['admins', 'profile_image_path', 'ALTER TABLE admins ADD COLUMN profile_image_path VARCHAR(255) DEFAULT NULL AFTER phone_number'],
+        ['teachers', 'phone_number', 'ALTER TABLE teachers ADD COLUMN phone_number VARCHAR(20) DEFAULT NULL AFTER email'],
+        ['teachers', 'profile_image_path', 'ALTER TABLE teachers ADD COLUMN profile_image_path VARCHAR(255) DEFAULT NULL AFTER phone_number'],
+        ['students', 'phone_number', 'ALTER TABLE students ADD COLUMN phone_number VARCHAR(20) DEFAULT NULL AFTER email'],
+        ['students', 'profile_image_path', 'ALTER TABLE students ADD COLUMN profile_image_path VARCHAR(255) DEFAULT NULL AFTER phone_number'],
+    ];
+
+    foreach ($columnDefinitions as [$table, $column, $sql]) {
+        if (!schema_column_exists($table, $column)) {
+            execute_sql($sql);
+        }
+    }
+
+    foreach (['admins', 'teachers', 'students'] as $role) {
+        profile_image_storage_directory($role);
+    }
+}
+
 function app_log(string $level, string $message, array $context = []): void
 {
     $logPath = (string) config('logging.path');
@@ -554,6 +601,104 @@ function assert_uploaded_file(array $file, array $allowedExtensions, int $maxByt
     return (string) $file['tmp_name'];
 }
 
+function normalize_phone_number(?string $value): ?string
+{
+    $value = trim((string) $value);
+    if ($value === '') {
+        return null;
+    }
+
+    $normalized = preg_replace('/[^\d+]/', '', $value) ?? '';
+    $hasPlus = str_starts_with($normalized, '+');
+    $digits = $hasPlus ? substr($normalized, 1) : $normalized;
+
+    if ($digits === '' || preg_match('/\D/', $digits)) {
+        throw new RuntimeException('Phone number must contain digits only.');
+    }
+
+    $length = strlen($digits);
+    if ($length < 10 || $length > 15) {
+        throw new RuntimeException('Phone number must be between 10 and 15 digits.');
+    }
+
+    return ($hasPlus ? '+' : '') . $digits;
+}
+
+function profile_image_initial(string $name): string
+{
+    $initial = strtoupper(substr(trim($name), 0, 1));
+
+    return $initial !== '' ? $initial : 'U';
+}
+
+function profile_image_url(?string $path): ?string
+{
+    $path = trim((string) $path);
+    if ($path === '') {
+        return null;
+    }
+
+    return url(str_replace('\\', '/', $path));
+}
+
+function profile_image_storage_directory(string $role): string
+{
+    $role = preg_replace('/[^a-z0-9_-]+/i', '', strtolower($role)) ?: 'users';
+    $directory = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'profiles' . DIRECTORY_SEPARATOR . $role;
+    ensure_directory($directory);
+
+    return $directory;
+}
+
+function profile_image_absolute_path(string $relativePath): string
+{
+    $relativePath = str_replace('/', DIRECTORY_SEPARATOR, ltrim($relativePath, '/\\'));
+
+    return dirname(__DIR__) . DIRECTORY_SEPARATOR . $relativePath;
+}
+
+function delete_profile_image(?string $relativePath): void
+{
+    $relativePath = str_replace('\\', '/', trim((string) $relativePath));
+    if ($relativePath === '' || !str_starts_with($relativePath, 'assets/uploads/profiles/')) {
+        return;
+    }
+
+    $absolutePath = profile_image_absolute_path($relativePath);
+    if (is_file($absolutePath)) {
+        @unlink($absolutePath);
+    }
+}
+
+function store_profile_image_upload(array $file, string $role, ?string $currentPath = null): ?string
+{
+    if (($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+        return $currentPath;
+    }
+
+    $tmpName = assert_uploaded_file($file, ['jpg', 'jpeg', 'png', 'webp'], (int) config('uploads.max_image_bytes', 2097152));
+    if (@getimagesize($tmpName) === false) {
+        throw new RuntimeException('Please upload a valid JPG, PNG, or WEBP image.');
+    }
+
+    $role = preg_replace('/[^a-z0-9_-]+/i', '', strtolower($role)) ?: 'users';
+    $extension = strtolower(pathinfo((string) ($file['name'] ?? ''), PATHINFO_EXTENSION));
+    $filename = $role . '_' . date('YmdHis') . '_' . bin2hex(random_bytes(8)) . '.' . $extension;
+    $relativePath = 'assets/uploads/profiles/' . $role . '/' . $filename;
+    $absolutePath = profile_image_absolute_path($relativePath);
+    profile_image_storage_directory($role);
+
+    if (!move_uploaded_file($tmpName, $absolutePath)) {
+        throw new RuntimeException('Profile image could not be saved. Please try again.');
+    }
+
+    if ($currentPath !== null && trim($currentPath) !== '' && $currentPath !== $relativePath) {
+        delete_profile_image($currentPath);
+    }
+
+    return $relativePath;
+}
+
 function read_uploaded_json_file(array $file, int $maxBytes): array
 {
     $tmpName = assert_uploaded_file($file, ['json'], $maxBytes);
@@ -667,6 +812,7 @@ function password_reset_request_success_message(?string $otpPreview = null): str
 
     return $message;
 }
+
 
 
 

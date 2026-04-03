@@ -1,1 +1,148 @@
-.role-admin .table-wrap table { min-width: 960px; }
+.role-admin .assignment-filters-card,
+.role-admin .assignment-summary-card,
+.role-admin .assignment-student-card,
+.role-admin .assignment-summary-wrap,
+.role-admin .assignment-student-wrap {
+  min-width: 0;
+}
+
+.role-admin .assignment-filters {
+  align-items: stretch;
+}
+
+.role-admin .assignment-filters .btn-primary {
+  min-height: 46px;
+}
+
+.role-admin .assignment-summary-table {
+  min-width: 960px;
+}
+
+.role-admin .assignment-student-table {
+  min-width: 1280px;
+}
+
+.role-admin .assignment-summary-table td,
+.role-admin .assignment-student-table td {
+  overflow-wrap: anywhere;
+  vertical-align: top;
+}
+
+.role-admin .assignment-summary-table th:last-child,
+.role-admin .assignment-summary-table td:last-child {
+  width: 128px;
+}
+
+.role-admin .assignment-summary-table .action-cell form,
+.role-admin .assignment-summary-table .action-cell .btn-danger {
+  width: 100%;
+}
+
+.role-admin .assignment-summary-table .badge,
+.role-admin .assignment-student-table .badge {
+  max-width: 100%;
+}
+
+@media (max-width: 720px) {
+  .role-admin .assignment-filters-card .card-head,
+  .role-admin .assignment-summary-card .card-head,
+  .role-admin .assignment-student-card .card-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .role-admin .assignment-filters {
+    display: grid;
+    gap: 12px;
+  }
+
+  .role-admin .assignment-filters .form-group,
+  .role-admin .assignment-filters .btn-primary {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .role-admin .assignment-filters .btn-primary {
+    justify-content: center;
+  }
+
+  .role-admin .assignment-summary-wrap,
+  .role-admin .assignment-student-wrap {
+    overflow-x: hidden;
+    overflow-y: visible;
+    border: none;
+    background: transparent;
+  }
+
+  .role-admin .assignment-summary-table,
+  .role-admin .assignment-summary-table thead,
+  .role-admin .assignment-summary-table tbody,
+  .role-admin .assignment-summary-table tr,
+  .role-admin .assignment-summary-table th,
+  .role-admin .assignment-summary-table td,
+  .role-admin .assignment-student-table,
+  .role-admin .assignment-student-table thead,
+  .role-admin .assignment-student-table tbody,
+  .role-admin .assignment-student-table tr,
+  .role-admin .assignment-student-table th,
+  .role-admin .assignment-student-table td {
+    display: block;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .role-admin .assignment-summary-table thead,
+  .role-admin .assignment-student-table thead {
+    display: none;
+  }
+
+  .role-admin .assignment-summary-table tbody,
+  .role-admin .assignment-student-table tbody {
+    display: grid;
+    gap: 12px;
+  }
+
+  .role-admin .assignment-summary-table tbody tr,
+  .role-admin .assignment-student-table tbody tr {
+    overflow: hidden;
+    border: 1px solid rgba(30, 64, 175, 0.12);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .role-admin .assignment-summary-table td,
+  .role-admin .assignment-student-table td {
+    display: grid;
+    grid-template-columns: minmax(116px, 42%) minmax(0, 1fr);
+    gap: 12px;
+    align-items: start;
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(30, 64, 175, 0.08);
+    text-align: left;
+  }
+
+  .role-admin .assignment-summary-table td:last-child,
+  .role-admin .assignment-student-table td:last-child {
+    border-bottom: none;
+  }
+
+  .role-admin .assignment-summary-table td::before,
+  .role-admin .assignment-student-table td::before {
+    content: attr(data-label);
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .role-admin .assignment-summary-table td[data-label='Action'] {
+    grid-template-columns: 1fr;
+  }
+
+  .role-admin .assignment-summary-table td[data-label='Action'] .btn-danger {
+    width: 100%;
+    justify-content: center;
+  }
+}
