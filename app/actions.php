@@ -32,6 +32,23 @@ function teacher_by_id(int $id): ?array
     );
 }
 
+function teacher_by_code(string $teacherCode): ?array
+{
+    $teacherCode = strtolower(trim($teacherCode));
+    if ($teacherCode === '') {
+        return null;
+    }
+
+    return query_one(
+        'SELECT t.*, d.name AS department_name, d.short_name
+         FROM teachers t
+         INNER JOIN departments d ON d.id = t.department_id
+         WHERE t.teacher_code = :teacher_code
+         LIMIT 1',
+        ['teacher_code' => $teacherCode]
+    );
+}
+
 function student_by_id(int $id): ?array
 {
     return query_one(
@@ -446,6 +463,41 @@ function bulk_import_subjects_csv(string $tmpName, int $departmentId, int $yearL
     return ['inserted' => $inserted, 'updated' => $updated];
 }
 
+function delete_subject_row(int $subjectId): array
+{
+    $subject = query_one(
+        'SELECT s.*, d.name AS department_name, d.short_name
+         FROM subjects s
+         INNER JOIN departments d ON d.id = s.department_id
+         WHERE s.id = :id
+         LIMIT 1',
+        ['id' => $subjectId]
+    );
+
+    if (!$subject) {
+        throw new RuntimeException('Subject record not found.');
+    }
+
+    $markUploads = (int) query_value('SELECT COUNT(*) FROM mark_uploads WHERE subject_id = :subject_id', ['subject_id' => $subjectId]);
+    $assignments = (int) query_value('SELECT COUNT(*) FROM assignments WHERE subject_id = :subject_id', ['subject_id' => $subjectId]);
+
+    if ($markUploads > 0 || $assignments > 0) {
+        $linkedItems = [];
+        if ($markUploads > 0) {
+            $linkedItems[] = $markUploads . ' marks upload' . ($markUploads === 1 ? '' : 's');
+        }
+        if ($assignments > 0) {
+            $linkedItems[] = $assignments . ' assignment' . ($assignments === 1 ? '' : 's');
+        }
+
+        throw new RuntimeException('This subject cannot be deleted because it is already linked to ' . implode(' and ', $linkedItems) . '.');
+    }
+
+    execute_sql('DELETE FROM subjects WHERE id = :id', ['id' => $subjectId]);
+
+    return $subject;
+}
+
 function subject_directory_rows(?int $departmentId = null, ?int $yearLevel = null, ?int $semesterNo = null, string $search = ''): array
 {
     $sql = 'SELECT s.*, d.name AS department_name, d.short_name,
@@ -558,6 +610,388 @@ function purge_rejected_teachers(): int
     execute_sql('DELETE FROM teachers WHERE status = "rejected"');
 
     return $count;
+}
+
+function support_request_type_label(?string $requestType): string
+{
+    return match (trim((string) $requestType)) {
+        'forgot_password' => 'Forgot Password',
+        'forgot_faculty_id' => 'Forgot Faculty ID',
+        'feedback' => 'Feedback',
+        'issue' => 'Issue',
+        default => trim((string) $requestType) !== ''
+            ? ucwords(str_replace(['_', '-'], ' ', (string) $requestType))
+            : 'General Request',
+    };
+}
+
+function support_request_status_label(string $status): string
+{
+    return match (trim($status)) {
+        'approved' => 'Approved',
+        'rejected' => 'Rejected',
+        default => 'Pending',
+    };
+}
+
+function support_request_status_tone(string $status): string
+{
+    return match (trim($status)) {
+        'approved' => 'success',
+        'rejected' => 'danger',
+        default => 'warning',
+    };
+}
+
+function support_request_by_id(int $requestId): ?array
+{
+    return query_one(
+        'SELECT sr.*, a.full_name AS reviewed_by_name
+         FROM support_requests sr
+         LEFT JOIN admins a ON a.id = sr.reviewed_by_admin_id
+         WHERE sr.id = :id
+         LIMIT 1',
+        ['id' => $requestId]
+    );
+}
+
+function support_request_rows(?string $category = null): array
+{
+    $params = [];
+    $sql = 'SELECT sr.*, a.full_name AS reviewed_by_name
+            FROM support_requests sr
+            LEFT JOIN admins a ON a.id = sr.reviewed_by_admin_id
+            WHERE 1 = 1';
+
+    if ($category !== null && trim($category) !== '') {
+        $sql .= ' AND sr.category = :category';
+        $params['category'] = trim($category);
+    }
+
+    $sql .= ' ORDER BY FIELD(sr.status, "pending", "approved", "rejected"), sr.created_at DESC, sr.id DESC';
+
+    return query_all($sql, $params);
+}
+
+function support_request_summary(): array
+{
+    $summary = [
+        'all' => ['total' => 0, 'pending' => 0, 'approved' => 0, 'rejected' => 0],
+        'request' => ['total' => 0, 'pending' => 0, 'approved' => 0, 'rejected' => 0],
+        'feedback' => ['total' => 0, 'pending' => 0, 'approved' => 0, 'rejected' => 0],
+        'issue' => ['total' => 0, 'pending' => 0, 'approved' => 0, 'rejected' => 0],
+    ];
+
+    $rows = query_all(
+        'SELECT category, status, COUNT(*) AS total
+         FROM support_requests
+         GROUP BY category, status'
+    );
+
+    foreach ($rows as $row) {
+        $category = (string) ($row['category'] ?? 'request');
+        $status = (string) ($row['status'] ?? 'pending');
+        $count = (int) ($row['total'] ?? 0);
+
+        if (!isset($summary[$category])) {
+            continue;
+        }
+
+        $summary[$category]['total'] += $count;
+        $summary[$category][$status] = ($summary[$category][$status] ?? 0) + $count;
+        $summary['all']['total'] += $count;
+        $summary['all'][$status] = ($summary['all'][$status] ?? 0) + $count;
+    }
+
+    return $summary;
+}
+
+function support_request_pending_count(?array $categories = null): int
+{
+    $params = [];
+    $sql = 'SELECT COUNT(*) FROM support_requests WHERE status = "pending"';
+
+    if ($categories !== null) {
+        $normalizedCategories = array_values(array_filter(array_map(
+            static fn (mixed $value): string => strtolower(trim((string) $value)),
+            $categories
+        ), static fn (string $value): bool => in_array($value, ['request', 'feedback', 'issue'], true)));
+
+        if ($normalizedCategories === []) {
+            return 0;
+        }
+
+        $placeholders = [];
+        foreach ($normalizedCategories as $index => $category) {
+            $key = 'category_' . $index;
+            $placeholders[] = ':' . $key;
+            $params[$key] = $category;
+        }
+
+        $sql .= ' AND category IN (' . implode(', ', $placeholders) . ')';
+    }
+
+    return (int) query_value($sql, $params);
+}
+
+function create_support_request(
+    string $category,
+    string $requestType,
+    string $requesterRole,
+    ?int $requesterId,
+    string $requesterName,
+    string $requesterIdentifier,
+    ?string $requesterEmail = null,
+    ?string $subjectLine = null,
+    ?string $messageBody = null,
+    ?string $requestedPasswordHash = null
+): array {
+    $category = strtolower(trim($category));
+    $requestType = strtolower(trim($requestType));
+    $requesterRole = strtolower(trim($requesterRole));
+    $requesterName = trim($requesterName);
+    $requesterIdentifier = trim($requesterIdentifier);
+    $requesterEmail = trim((string) $requesterEmail) !== '' ? strtolower(trim((string) $requesterEmail)) : null;
+    $subjectLine = trim((string) $subjectLine) !== '' ? trim((string) $subjectLine) : null;
+    $messageBody = trim((string) $messageBody) !== '' ? trim((string) $messageBody) : null;
+    $requestedPasswordHash = trim((string) $requestedPasswordHash) !== '' ? trim((string) $requestedPasswordHash) : null;
+
+    if (!in_array($category, ['request', 'feedback', 'issue'], true)) {
+        throw new RuntimeException('Unsupported support request category.');
+    }
+    if ($requestType === '') {
+        throw new RuntimeException('Choose a valid request type.');
+    }
+    if ($requesterRole === '') {
+        throw new RuntimeException('Requester role is required.');
+    }
+    if ($requesterName === '' || $requesterIdentifier === '') {
+        throw new RuntimeException('Requester details are incomplete.');
+    }
+
+    $existingId = (int) (query_value(
+        'SELECT id
+         FROM support_requests
+         WHERE category = :category
+           AND request_type = :request_type
+           AND requester_role = :requester_role
+           AND requester_identifier = :requester_identifier
+           AND status = "pending"
+         ORDER BY id DESC
+         LIMIT 1',
+        [
+            'category' => $category,
+            'request_type' => $requestType,
+            'requester_role' => $requesterRole,
+            'requester_identifier' => $requesterIdentifier,
+        ]
+    ) ?: 0);
+
+    if ($existingId > 0) {
+        execute_sql(
+            'UPDATE support_requests
+             SET requester_id = :requester_id,
+                 requester_name = :requester_name,
+                 requester_email = :requester_email,
+                 subject_line = :subject_line,
+                 message_body = :message_body,
+                 requested_password_hash = :requested_password_hash,
+                 reviewed_by_admin_id = NULL,
+                 reviewed_at = NULL,
+                 status = "pending",
+                 created_at = NOW(),
+                 updated_at = NOW()
+             WHERE id = :id',
+            [
+                'requester_id' => $requesterId,
+                'requester_name' => $requesterName,
+                'requester_email' => $requesterEmail,
+                'subject_line' => $subjectLine,
+                'message_body' => $messageBody,
+                'requested_password_hash' => $requestedPasswordHash,
+                'id' => $existingId,
+            ]
+        );
+
+        return support_request_by_id($existingId) ?? throw new RuntimeException('Support request could not be refreshed.');
+    }
+
+    execute_sql(
+        'INSERT INTO support_requests (
+            category,
+            request_type,
+            requester_role,
+            requester_id,
+            requester_name,
+            requester_identifier,
+            requester_email,
+            subject_line,
+            message_body,
+            requested_password_hash
+         ) VALUES (
+            :category,
+            :request_type,
+            :requester_role,
+            :requester_id,
+            :requester_name,
+            :requester_identifier,
+            :requester_email,
+            :subject_line,
+            :message_body,
+            :requested_password_hash
+         )',
+        [
+            'category' => $category,
+            'request_type' => $requestType,
+            'requester_role' => $requesterRole,
+            'requester_id' => $requesterId,
+            'requester_name' => $requesterName,
+            'requester_identifier' => $requesterIdentifier,
+            'requester_email' => $requesterEmail,
+            'subject_line' => $subjectLine,
+            'message_body' => $messageBody,
+            'requested_password_hash' => $requestedPasswordHash,
+        ]
+    );
+
+    return support_request_by_id((int) db()->lastInsertId()) ?? throw new RuntimeException('Support request could not be created.');
+}
+
+function create_teacher_access_request(string $teacherCode, string $requestType, ?string $newPassword = null): array
+{
+    $teacher = teacher_by_code($teacherCode);
+    if (!$teacher) {
+        throw new RuntimeException('Faculty ID not found. Enter the registered faculty ID.');
+    }
+
+    $requestType = strtolower(trim($requestType));
+    $requestedPasswordHash = null;
+    $subjectLine = null;
+    $messageBody = null;
+
+    if ($requestType === 'forgot_password') {
+        $newPassword = validate_password_strength((string) $newPassword);
+        $requestedPasswordHash = password_hash($newPassword, PASSWORD_DEFAULT);
+        $subjectLine = 'Faculty password reset approval';
+        $messageBody = 'Faculty requested approval to replace the current login password with the newly submitted password.';
+    } elseif ($requestType === 'forgot_faculty_id') {
+        if (trim((string) ($teacher['email'] ?? '')) === '') {
+            throw new RuntimeException('The faculty account does not have an email address on record. Contact the administrator directly.');
+        }
+
+        $subjectLine = 'Faculty ID reminder request';
+        $messageBody = 'Faculty requested approval to receive the registered faculty ID through the default mail client.';
+    } else {
+        throw new RuntimeException('Select a valid request type.');
+    }
+
+    return create_support_request(
+        'request',
+        $requestType,
+        'teacher',
+        (int) $teacher['id'],
+        (string) $teacher['full_name'],
+        (string) $teacher['teacher_code'],
+        (string) ($teacher['email'] ?? ''),
+        $subjectLine,
+        $messageBody,
+        $requestedPasswordHash
+    );
+}
+
+function support_request_mailto_link(array $request): ?string
+{
+    if (($request['category'] ?? null) !== 'request' || ($request['request_type'] ?? null) !== 'forgot_faculty_id') {
+        return null;
+    }
+
+    $email = trim((string) ($request['requester_email'] ?? ''));
+    $facultyId = trim((string) ($request['requester_identifier'] ?? ''));
+    if ($email === '' || $facultyId === '') {
+        return null;
+    }
+
+    $recipientName = trim((string) ($request['requester_name'] ?? 'Faculty'));
+    $subject = rawurlencode('Your BIPE Faculty ID');
+    $body = rawurlencode("Hello {$recipientName}\n\nYour BIPE faculty ID is: {$facultyId}\n\nPlease keep this ID safe for future login and support requests.\n\nRegards,\nBIPE Academic Portal Admin");
+
+    return 'mailto:' . $email . '?subject=' . $subject . '&body=' . $body;
+}
+
+function approve_support_request(int $requestId, int $adminId): array
+{
+    $request = support_request_by_id($requestId);
+    if (!$request) {
+        throw new RuntimeException('Selected request was not found.');
+    }
+    if (($request['status'] ?? '') !== 'pending') {
+        throw new RuntimeException('This request has already been reviewed.');
+    }
+
+    db()->beginTransaction();
+    try {
+        if (($request['category'] ?? '') === 'request' && ($request['request_type'] ?? '') === 'forgot_password') {
+            $teacherId = (int) ($request['requester_id'] ?? 0);
+            $passwordHash = trim((string) ($request['requested_password_hash'] ?? ''));
+            if ($teacherId <= 0 || $passwordHash === '') {
+                throw new RuntimeException('Requested password data is missing for this approval.');
+            }
+            if (!teacher_by_id($teacherId)) {
+                throw new RuntimeException('The faculty account linked to this request no longer exists.');
+            }
+
+            execute_sql(
+                'UPDATE teachers
+                 SET password_hash = :password_hash, updated_at = NOW()
+                 WHERE id = :id',
+                ['password_hash' => $passwordHash, 'id' => $teacherId]
+            );
+        }
+
+        execute_sql(
+            'UPDATE support_requests
+             SET status = "approved",
+                 reviewed_by_admin_id = :admin_id,
+                 reviewed_at = NOW(),
+                 updated_at = NOW()
+             WHERE id = :id',
+            ['admin_id' => $adminId, 'id' => $requestId]
+        );
+        db()->commit();
+    } catch (Throwable $exception) {
+        db()->rollBack();
+        throw $exception;
+    }
+
+    $approved = support_request_by_id($requestId) ?? $request;
+
+    return [
+        'request' => $approved,
+        'mailto' => support_request_mailto_link($approved),
+    ];
+}
+
+function reject_support_request(int $requestId, int $adminId): array
+{
+    $request = support_request_by_id($requestId);
+    if (!$request) {
+        throw new RuntimeException('Selected request was not found.');
+    }
+    if (($request['status'] ?? '') !== 'pending') {
+        throw new RuntimeException('This request has already been reviewed.');
+    }
+
+    execute_sql(
+        'UPDATE support_requests
+         SET status = "rejected",
+             reviewed_by_admin_id = :admin_id,
+             reviewed_at = NOW(),
+             updated_at = NOW()
+         WHERE id = :id',
+        ['admin_id' => $adminId, 'id' => $requestId]
+    );
+
+    return support_request_by_id($requestId) ?? $request;
 }
 
 function holiday_rows(?int $departmentId = null): array
@@ -1144,6 +1578,7 @@ function reset_portal(): void
         execute_sql('DELETE FROM attendance_sessions');
         execute_sql('DELETE FROM holiday_events');
         execute_sql('DELETE FROM admin_otp_requests');
+        execute_sql('DELETE FROM support_requests');
         execute_sql('DELETE FROM teachers');
         execute_sql('DELETE FROM students');
         db()->commit();
@@ -1152,6 +1587,11 @@ function reset_portal(): void
         throw $exception;
     }
 }
+
+
+
+
+
 
 
 

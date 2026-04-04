@@ -1,1 +1,13 @@
 .stack { display: grid; gap: 16px; }
+
+.faculty-forgot-shell {
+  max-width: 560px;
+}
+
+.faculty-forgot-form {
+  padding: 0;
+}
+
+.faculty-forgot-password-group.is-hidden {
+  display: none;
+}

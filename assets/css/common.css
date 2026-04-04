@@ -602,6 +602,19 @@ p {
   border-radius: 16px;
   color: #cbd5e1;
   transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+  position: relative;
+}
+
+.sidebar-link.has-pending-indicator::before {
+  content: '';
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #fb7185;
+  box-shadow: 0 0 0 3px rgba(251, 113, 133, 0.18);
 }
 
 .sidebar-link:hover,
@@ -1138,5 +1151,39 @@ body.confirm-open {
   overflow: hidden;
 }
 
+@media (max-width: 720px) {
+  .confirm-modal-backdrop {
+    padding: 14px;
+  }
+
+  .confirm-modal {
+    width: min(100%, 380px);
+    border-radius: 22px;
+    padding: 20px 18px;
+  }
+
+  .confirm-modal h3 {
+    margin: 4px 0 8px;
+    font-size: 22px;
+  }
+
+  .confirm-modal-message {
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .confirm-modal-actions {
+    flex-direction: column-reverse;
+    gap: 10px;
+    margin-top: 18px;
+  }
+
+  .confirm-modal-actions .btn-primary,
+  .confirm-modal-actions .btn-secondary,
+  .confirm-modal-actions .btn-success,
+  .confirm-modal-actions .btn-danger {
+    width: 100%;
+  }
+}
 
 

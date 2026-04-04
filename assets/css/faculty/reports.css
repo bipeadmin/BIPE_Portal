@@ -1,1 +1,287 @@
-.role-teacher .table-wrap table { min-width: 780px; }
+.role-teacher .faculty-report-filter-card,
+.role-teacher .faculty-report-card,
+.role-teacher .faculty-report-table-wrap {
+  min-width: 0;
+}
+
+.role-teacher .faculty-report-filters {
+  margin-top: 14px;
+}
+
+.role-teacher .faculty-report-stats {
+  margin-top: 16px;
+}
+
+.role-teacher .faculty-report-grid {
+  align-items: start;
+}
+
+.role-teacher .faculty-report-table-wrap {
+  max-height: clamp(340px, 66vh, 560px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.role-teacher .faculty-report-table {
+  width: 100%;
+  min-width: 0;
+  table-layout: fixed;
+}
+
+.role-teacher .faculty-report-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: rgba(240, 249, 255, 0.98);
+}
+
+.role-teacher .faculty-report-table td {
+  overflow-wrap: anywhere;
+}
+
+.role-teacher .faculty-report-table th:nth-child(1),
+.role-teacher .faculty-report-table td:nth-child(1),
+.role-teacher .faculty-report-table th:nth-child(2),
+.role-teacher .faculty-report-table td:nth-child(2),
+.role-teacher .faculty-report-table th:nth-child(4),
+.role-teacher .faculty-report-table td:nth-child(4),
+.role-teacher .faculty-report-table th:nth-child(5),
+.role-teacher .faculty-report-table td:nth-child(5),
+.role-teacher .faculty-report-table th:nth-child(6),
+.role-teacher .faculty-report-table td:nth-child(6),
+.role-teacher .faculty-report-table th:nth-child(7),
+.role-teacher .faculty-report-table td:nth-child(7) {
+  width: 120px;
+}
+
+.role-teacher .faculty-marks-report-table {
+  table-layout: auto;
+  min-width: 980px;
+}
+
+.role-teacher .faculty-marks-report-table th:nth-child(1),
+.role-teacher .faculty-marks-report-table td:nth-child(1) {
+  min-width: 180px;
+}
+
+.role-teacher .faculty-marks-report-table th:nth-child(2),
+.role-teacher .faculty-marks-report-table td:nth-child(2) {
+  min-width: 130px;
+}
+
+.role-teacher .faculty-marks-report-table th:nth-child(3),
+.role-teacher .faculty-marks-report-table td:nth-child(3) {
+  min-width: 220px;
+}
+
+.role-teacher .faculty-marks-report-table th:nth-child(4),
+.role-teacher .faculty-marks-report-table td:nth-child(4) {
+  min-width: 180px;
+}
+
+.role-teacher .faculty-marks-report-table th:nth-child(5),
+.role-teacher .faculty-marks-report-table td:nth-child(5),
+.role-teacher .faculty-marks-report-table th:nth-child(6),
+.role-teacher .faculty-marks-report-table td:nth-child(6) {
+  min-width: 110px;
+}
+
+.role-teacher .faculty-marks-report-table th:nth-child(7),
+.role-teacher .faculty-marks-report-table td:nth-child(7) {
+  min-width: 170px;
+}
+
+.role-teacher .faculty-marks-report-table th,
+.role-teacher .faculty-marks-report-table td {
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.role-teacher .faculty-report-department-name,
+.role-teacher .faculty-report-subject-name {
+  display: inline-block;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.role-teacher .faculty-report-semester-pill,
+.role-teacher .faculty-report-metric {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.05);
+  color: var(--ink);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.role-teacher .faculty-report-exam-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+  white-space: nowrap;
+  word-break: normal;
+  overflow-wrap: normal;
+}
+
+.role-teacher .faculty-report-time {
+  display: inline-block;
+  color: var(--muted);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: nowrap;
+}
+.role-teacher .faculty-marks-report-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.role-teacher .faculty-marks-report-item {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid rgba(30, 64, 175, 0.12);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: var(--shadow-sm);
+}
+
+.role-teacher .faculty-marks-report-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: start;
+}
+
+.role-teacher .faculty-marks-report-title {
+  margin-top: 4px;
+  font-size: 20px;
+  line-height: 1.3;
+}
+
+.role-teacher .faculty-marks-report-subject-block {
+  display: grid;
+  gap: 6px;
+  padding-top: 2px;
+  border-top: 1px solid rgba(30, 64, 175, 0.08);
+}
+
+.role-teacher .faculty-marks-report-label {
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.role-teacher .faculty-marks-report-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.role-teacher .faculty-marks-report-field {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 16px;
+  background: rgba(30, 64, 175, 0.04);
+}
+
+.role-teacher .faculty-marks-report-field-wide {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 960px) {
+  .role-teacher .faculty-report-table {
+    table-layout: auto;
+  }
+}
+
+@media (max-width: 720px) {
+  .role-teacher .faculty-report-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .role-teacher .faculty-report-filters .btn-primary {
+    width: 100%;
+  }
+
+  .role-teacher .faculty-report-table-wrap {
+    max-height: min(72vh, 560px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    border: none;
+    background: transparent;
+  }
+
+  .role-teacher .faculty-report-table,
+  .role-teacher .faculty-report-table thead,
+  .role-teacher .faculty-report-table tbody,
+  .role-teacher .faculty-report-table tr,
+  .role-teacher .faculty-report-table th,
+  .role-teacher .faculty-report-table td {
+    display: block;
+    width: 100% !important;
+  }
+
+  .role-teacher .faculty-report-table {
+    background: transparent;
+    min-width: 0;
+  }
+
+  .role-teacher .faculty-report-table thead {
+    display: none;
+  }
+
+  .role-teacher .faculty-report-table tbody {
+    display: grid;
+    gap: 12px;
+  }
+
+  .role-teacher .faculty-report-table tbody tr {
+    overflow: hidden;
+    border: 1px solid rgba(30, 64, 175, 0.12);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .role-teacher .faculty-report-table td {
+    display: grid;
+    grid-template-columns: minmax(110px, 42%) minmax(0, 1fr);
+    gap: 12px;
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(30, 64, 175, 0.07);
+    text-align: left;
+  }
+
+  .role-teacher .faculty-report-table td:last-child {
+    border-bottom: none;
+  }
+
+  .role-teacher .faculty-report-table td::before {
+    content: attr(data-label);
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .role-teacher .faculty-report-exam-pill,
+  .role-teacher .faculty-report-time,
+  .role-teacher .faculty-report-semester-pill,
+  .role-teacher .faculty-report-metric {
+    white-space: normal;
+  }
+}
+

@@ -1,1 +1,139 @@
-.table-wrap td:nth-child(3), .table-wrap td:nth-child(4), .table-wrap td:nth-child(5) { text-align: center; }
+.role-teacher .view-marks-card {
+  display: grid;
+  gap: 16px;
+}
+
+.role-teacher .view-marks-head,
+.role-teacher .view-marks-summary,
+.role-teacher .view-marks-table-wrap {
+  min-width: 0;
+}
+
+.role-teacher .view-marks-notice {
+  margin: 0;
+}
+
+.role-teacher .view-marks-summary .stat-card {
+  min-width: 0;
+}
+
+.role-teacher .view-marks-stat-text {
+  font-size: clamp(22px, 2vw, 30px);
+  line-height: 1.15;
+}
+
+.role-teacher .view-marks-table-wrap {
+  max-height: clamp(380px, 70vh, 620px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.role-teacher .view-marks-table {
+  width: 100%;
+  min-width: 0;
+  table-layout: fixed;
+}
+
+.role-teacher .view-marks-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: rgba(240, 249, 255, 0.98);
+}
+
+.role-teacher .view-marks-table th:nth-child(1),
+.role-teacher .view-marks-table td:nth-child(1) {
+  width: 132px;
+}
+
+.role-teacher .view-marks-table th:nth-child(3),
+.role-teacher .view-marks-table td:nth-child(3),
+.role-teacher .view-marks-table th:nth-child(4),
+.role-teacher .view-marks-table td:nth-child(4),
+.role-teacher .view-marks-table th:nth-child(5),
+.role-teacher .view-marks-table td:nth-child(5) {
+  width: 120px;
+}
+
+.role-teacher .view-marks-table td {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 960px) {
+  .role-teacher .view-marks-table {
+    table-layout: auto;
+  }
+}
+
+@media (max-width: 720px) {
+  .role-teacher .view-marks-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .role-teacher .view-marks-filters .btn-primary {
+    width: 100%;
+  }
+
+  .role-teacher .view-marks-table-wrap {
+    max-height: min(72vh, 560px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    border: none;
+    background: transparent;
+  }
+
+  .role-teacher .view-marks-table,
+  .role-teacher .view-marks-table thead,
+  .role-teacher .view-marks-table tbody,
+  .role-teacher .view-marks-table tr,
+  .role-teacher .view-marks-table th,
+  .role-teacher .view-marks-table td {
+    display: block;
+    width: 100% !important;
+  }
+
+  .role-teacher .view-marks-table {
+    background: transparent;
+  }
+
+  .role-teacher .view-marks-table thead {
+    display: none;
+  }
+
+  .role-teacher .view-marks-table tbody {
+    display: grid;
+    gap: 12px;
+  }
+
+  .role-teacher .view-marks-table tbody tr {
+    overflow: hidden;
+    border: 1px solid rgba(30, 64, 175, 0.12);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .role-teacher .view-marks-table td {
+    display: grid;
+    grid-template-columns: minmax(110px, 42%) minmax(0, 1fr);
+    gap: 12px;
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(30, 64, 175, 0.07);
+    text-align: left;
+  }
+
+  .role-teacher .view-marks-table td:last-child {
+    border-bottom: none;
+  }
+
+  .role-teacher .view-marks-table td::before {
+    content: attr(data-label);
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+}

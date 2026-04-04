@@ -1,1 +1,176 @@
-.role-teacher .table-wrap table { min-width: 860px; }
+.role-teacher .faculty-assignments-grid {
+  align-items: start;
+}
+
+.role-teacher .assignment-entry-card,
+.role-teacher .assignment-history-card,
+.role-teacher .assignment-sheet-wrap,
+.role-teacher .assignment-history-wrap {
+  min-width: 0;
+}
+
+.role-teacher .assignment-summary-grid {
+  margin-bottom: 4px;
+}
+
+.role-teacher .assignment-sheet-wrap,
+.role-teacher .assignment-history-wrap {
+  max-height: clamp(360px, 68vh, 580px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.role-teacher .assignment-sheet-table,
+.role-teacher .assignment-history-table {
+  width: 100%;
+  min-width: 0;
+  table-layout: fixed;
+}
+
+.role-teacher .assignment-sheet-table thead th,
+.role-teacher .assignment-history-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: rgba(240, 249, 255, 0.98);
+}
+
+.role-teacher .assignment-sheet-table th:nth-child(1),
+.role-teacher .assignment-sheet-table td:nth-child(1) {
+  width: 136px;
+}
+
+.role-teacher .assignment-sheet-table th:nth-child(3),
+.role-teacher .assignment-sheet-table td:nth-child(3) {
+  width: 110px;
+  text-align: center;
+}
+
+.role-teacher .assignment-history-table th:nth-child(1),
+.role-teacher .assignment-history-table td:nth-child(1),
+.role-teacher .assignment-history-table th:nth-child(4),
+.role-teacher .assignment-history-table td:nth-child(4),
+.role-teacher .assignment-history-table th:nth-child(5),
+.role-teacher .assignment-history-table td:nth-child(5),
+.role-teacher .assignment-history-table th:nth-child(6),
+.role-teacher .assignment-history-table td:nth-child(6) {
+  width: 118px;
+}
+
+.role-teacher .assignment-sheet-table td,
+.role-teacher .assignment-history-table td {
+  overflow-wrap: anywhere;
+}
+
+.role-teacher .assignment-checkbox-cell {
+  vertical-align: middle;
+}
+
+.role-teacher .assignment-checkbox-cell input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary);
+}
+
+@media (max-width: 960px) {
+  .role-teacher .assignment-sheet-table,
+  .role-teacher .assignment-history-table {
+    table-layout: auto;
+  }
+}
+
+@media (max-width: 720px) {
+  .role-teacher .assignment-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .role-teacher .assignment-filter-form .btn-primary,
+  .role-teacher .assignment-entry-form > .btn-primary {
+    width: 100%;
+  }
+
+  .role-teacher .assignment-sheet-wrap,
+  .role-teacher .assignment-history-wrap {
+    max-height: min(72vh, 560px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    border: none;
+    background: transparent;
+  }
+
+  .role-teacher .assignment-sheet-table,
+  .role-teacher .assignment-sheet-table thead,
+  .role-teacher .assignment-sheet-table tbody,
+  .role-teacher .assignment-sheet-table tr,
+  .role-teacher .assignment-sheet-table th,
+  .role-teacher .assignment-sheet-table td,
+  .role-teacher .assignment-history-table,
+  .role-teacher .assignment-history-table thead,
+  .role-teacher .assignment-history-table tbody,
+  .role-teacher .assignment-history-table tr,
+  .role-teacher .assignment-history-table th,
+  .role-teacher .assignment-history-table td {
+    display: block;
+    width: 100% !important;
+  }
+
+  .role-teacher .assignment-sheet-table,
+  .role-teacher .assignment-history-table {
+    background: transparent;
+  }
+
+  .role-teacher .assignment-sheet-table thead,
+  .role-teacher .assignment-history-table thead {
+    display: none;
+  }
+
+  .role-teacher .assignment-sheet-table tbody,
+  .role-teacher .assignment-history-table tbody {
+    display: grid;
+    gap: 12px;
+  }
+
+  .role-teacher .assignment-sheet-table tbody tr,
+  .role-teacher .assignment-history-table tbody tr {
+    overflow: hidden;
+    border: 1px solid rgba(30, 64, 175, 0.12);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .role-teacher .assignment-sheet-table td,
+  .role-teacher .assignment-history-table td {
+    display: grid;
+    grid-template-columns: minmax(110px, 42%) minmax(0, 1fr);
+    gap: 12px;
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(30, 64, 175, 0.07);
+    text-align: left;
+  }
+
+  .role-teacher .assignment-sheet-table td:last-child,
+  .role-teacher .assignment-history-table td:last-child {
+    border-bottom: none;
+  }
+
+  .role-teacher .assignment-sheet-table td::before,
+  .role-teacher .assignment-history-table td::before {
+    content: attr(data-label);
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .role-teacher .assignment-checkbox-cell {
+    align-items: center;
+  }
+
+  .role-teacher .assignment-checkbox-cell input[type='checkbox'] {
+    justify-self: start;
+  }
+}

@@ -88,14 +88,14 @@ render_dashboard_layout('Backup & Restore', 'admin', 'backup', 'admin/backup.css
                 <h3 class="card-title">Current records by table</h3>
             </div>
         </div>
-        <div class="table-wrap">
-            <table>
+        <div class="table-wrap backup-summary-wrap">
+            <table class="backup-summary-table">
                 <thead><tr><th>Table</th><th>Rows</th></tr></thead>
                 <tbody>
                 <?php foreach ($dataSummary as $row): ?>
-                    <tr>
-                        <td class="mono"><?= e($row['table']) ?></td>
-                        <td><?= e((string) $row['count']) ?></td>
+                    <tr class="backup-summary-row">
+                        <td class="mono" data-label="Table"><?= e($row['table']) ?></td>
+                        <td data-label="Rows"><?= e((string) $row['count']) ?></td>
                     </tr>
                 <?php endforeach; ?>
                 </tbody>
@@ -104,3 +104,4 @@ render_dashboard_layout('Backup & Restore', 'admin', 'backup', 'admin/backup.css
     </article>
     <?php
 });
+

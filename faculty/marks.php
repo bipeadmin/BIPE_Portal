@@ -67,19 +67,34 @@ $selectedMarkType = $markTypeId > 0 ? mark_type_by_id($markTypeId) : null;
 $selectedMaxMarks = (float) ($selectedMarkType['max_marks'] ?? 0);
 $sheetDepartmentId = $selectedSubject ? (int) $selectedSubject['department_id'] : ($allDepartmentsMode ? 0 : $selectedDepartmentId);
 $students = ($subjectId > 0 && $sheetDepartmentId > 0) ? students_for_class($sheetDepartmentId, $semesterNo) : [];
-$studentMap = [];
-foreach ($students as $student) {
-    $studentMap[strtoupper((string) $student['enrollment_no'])] = (int) $student['id'];
-}
+$csvRestrictionIssueSessionKey = 'marks_csv_restriction_issues_' . (int) ($teacher['id'] ?? 0);
 
 if (isset($_GET['template'])) {
     header('Content-Type: text/csv');
     header('Content-Disposition: attachment; filename="marks_template.csv"');
-    echo "Enrollment No,Student Name,Marks,Absent\n";
-    foreach ($students as $student) {
-        echo $student['enrollment_no'] . ',' . $student['full_name'] . ',,No\n';
+
+    $output = fopen('php://output', 'wb');
+    if ($output === false) {
+        throw new RuntimeException('Unable to generate the CSV template.');
     }
+
+    fputcsv($output, ['Enrollment No', 'Student Name', 'Marks', 'Absent (True/False)']);
+    foreach ($students as $student) {
+        fputcsv($output, [
+            (string) ($student['enrollment_no'] ?? ''),
+            (string) ($student['full_name'] ?? ''),
+            '',
+            '',
+        ]);
+    }
+    fclose($output);
     exit;
+}
+
+$csvRestrictionIssues = $_SESSION[$csvRestrictionIssueSessionKey] ?? [];
+unset($_SESSION[$csvRestrictionIssueSessionKey]);
+if (!is_array($csvRestrictionIssues)) {
+    $csvRestrictionIssues = [];
 }
 
 if (is_post()) {
@@ -135,12 +150,14 @@ if (is_post()) {
         }
 
         if ($action === 'delete_upload') {
+            unset($_SESSION[$csvRestrictionIssueSessionKey]);
             delete_mark_upload((int) post('upload_id'));
             audit_log('teacher', (string) ($teacher['teacher_code'] ?? $teacher['id']), 'MARKS_DELETE', 'Upload ' . (int) post('upload_id'));
             flash('success', 'Marks upload deleted successfully.');
         }
 
         if ($action === 'save_manual') {
+            unset($_SESSION[$csvRestrictionIssueSessionKey]);
             $requestStudents = students_for_class($requestDepartmentId, $requestSemesterNo);
             $requestMarkType = mark_type_by_id($requestMarkTypeId);
             $requestMaxMarks = (float) ($requestMarkType['max_marks'] ?? 0);
@@ -170,14 +187,31 @@ if (is_post()) {
 
         if ($action === 'save_csv') {
             $requestStudents = students_for_class($requestDepartmentId, $requestSemesterNo);
-            $requestStudentMap = [];
+            $requestStudentsByEnrollment = [];
             foreach ($requestStudents as $student) {
-                $requestStudentMap[strtoupper((string) $student['enrollment_no'])] = (int) $student['id'];
+                $requestStudentsByEnrollment[strtoupper((string) $student['enrollment_no'])] = [
+                    'id' => (int) $student['id'],
+                    'enrollment_no' => (string) ($student['enrollment_no'] ?? ''),
+                    'full_name' => (string) ($student['full_name'] ?? ''),
+                ];
             }
+
+            $requestMarkType = mark_type_by_id($requestMarkTypeId);
+            $requestMaxMarks = (float) ($requestMarkType['max_marks'] ?? 0);
             $csvPath = assert_uploaded_file((array) ($_FILES['marks_file'] ?? []), ['csv'], (int) config('uploads.max_csv_bytes', 2097152));
-            $records = parse_marks_csv_records_with_absent($csvPath, $requestStudentMap);
+            $csvParseResult = parse_marks_csv_records_with_absent($csvPath, $requestStudentsByEnrollment, $requestMaxMarks);
+            $records = (array) ($csvParseResult['records'] ?? []);
+            $csvViolations = array_values(array_filter((array) ($csvParseResult['violations'] ?? []), 'is_array'));
+
             save_mark_upload_sheet((int) $teacher['id'], $requestDepartmentId, $requestSemesterNo, $requestSubjectId, $requestMarkTypeId, $records);
-            flash('success', 'CSV marks uploaded successfully.');
+
+            $_SESSION[$csvRestrictionIssueSessionKey] = $csvViolations;
+            $csvViolationCount = count($csvViolations);
+            if ($csvViolationCount > 0) {
+                flash('success', $csvViolationCount . ' CSV row(s) exceeded the max marks and were saved as 0. Review them below or correct them in manual entry.');
+            } else {
+                flash('success', 'CSV marks uploaded successfully.');
+            }
         }
     } catch (Throwable $exception) {
         flash_exception($exception);
@@ -209,14 +243,21 @@ $isLocked = $sheetDepartmentId > 0 ? mark_section_locked($sheetDepartmentId, $se
 $lockMessage = $allDepartmentsMode
     ? 'This semester is locked by the administrator for the selected subject department. You can review marks, but you cannot modify uploads until the section is unlocked.'
     : 'This semester is locked by the administrator for the selected department. You can review marks, but you cannot modify uploads until the section is unlocked.';
-$csvNotice = $allDepartmentsMode
-    ? 'The upload expects Enrollment, Marks, and optional Absent columns for the currently selected subject and semester.'
-    : 'The upload expects Enrollment, Marks, and optional Absent columns for the currently selected department and semester.';
+$csvNotice = 'Download the filtered template to get Enrollment No and Student Name prefilled for the current sheet. Fill Marks, use True for absent or False for present, and any CSV marks above the selected maximum will be saved as 0.';
 $emptyStateMessage = $allDepartmentsMode
     ? 'Choose a subject to open the marks sheet for the selected semester.'
     : 'Choose a department and subject to open the marks sheet for this semester.';
+$templateDownloadUrl = url('faculty/marks.php?template=1&department_id=' . urlencode($departmentQueryValue) . '&semester_no=' . $semesterNo . '&subject_id=' . $subjectId . '&mark_type_id=' . $markTypeId);
+$templateBaseUrl = url('faculty/marks.php');
+$csvIssueCount = count($csvRestrictionIssues);
+$csvIssuesSummary = 'These rows crossed the selected maximum of ' . $selectedMaxMarks . '. They were saved as 0. Update them in manual entry to clear this list.';
+$csvIssuesResolvedMessage = 'All CSV restriction issues are resolved in manual entry.';
+$uploadReportCount = count($uploads);
+$uploadReportSubtitle = $allDepartmentsMode
+    ? 'Saved mark sheets across all departments for ' . semester_label($semesterNo) . '.'
+    : 'Saved mark sheets for the selected department in ' . semester_label($semesterNo) . '.';
 
-render_dashboard_layout('Upload Marks', 'teacher', 'marks', 'faculty/marks.css', 'faculty/marks.js', function () use ($departments, $selectedDepartmentId, $departmentQueryValue, $allDepartmentsMode, $semesterNo, $subjectId, $markTypeId, $subjectOptions, $markTypes, $students, $existingRecords, $uploads, $isLocked, $selectedMarkType, $selectedMaxMarks, $sheetDepartmentId, $lockMessage, $csvNotice, $emptyStateMessage): void {
+render_dashboard_layout('Upload Marks', 'teacher', 'marks', 'faculty/marks.css', 'faculty/marks.js', function () use ($departments, $selectedDepartmentId, $departmentQueryValue, $allDepartmentsMode, $semesterNo, $subjectId, $markTypeId, $subjectOptions, $markTypes, $students, $existingRecords, $uploads, $isLocked, $selectedMaxMarks, $sheetDepartmentId, $lockMessage, $csvNotice, $emptyStateMessage, $templateDownloadUrl, $templateBaseUrl, $csvRestrictionIssues, $csvIssueCount, $csvIssuesSummary, $csvIssuesResolvedMessage, $uploadReportCount, $uploadReportSubtitle): void {
     ?>
     <?php if ($isLocked): ?>
         <div class="notice-box danger"><?= e($lockMessage) ?></div>
@@ -229,9 +270,9 @@ render_dashboard_layout('Upload Marks', 'teacher', 'marks', 'faculty/marks.css',
                     <p class="eyebrow">Manual Entry</p>
                     <h3 class="card-title">Enter or edit marks for a subject</h3>
                 </div>
-                <a class="btn-secondary" href="<?= e(url('faculty/marks.php?template=1&department_id=' . urlencode($departmentQueryValue) . '&semester_no=' . $semesterNo . '&subject_id=' . $subjectId . '&mark_type_id=' . $markTypeId)) ?>">Download CSV Template</a>
+                <a class="btn-secondary" href="<?= e($templateDownloadUrl) ?>" data-template-download data-template-base="<?= e($templateBaseUrl) ?>">Download CSV Template</a>
             </div>
-            <form method="get" class="filters" style="margin-bottom:14px">
+            <form method="get" class="filters marks-filter-form" style="margin-bottom:14px">
                 <div class="form-group">
                     <label class="form-label" for="marks-department">Department</label>
                     <select class="form-select" id="marks-department" name="department_id">
@@ -296,7 +337,7 @@ render_dashboard_layout('Upload Marks', 'teacher', 'marks', 'faculty/marks.css',
                                 $entry = $existingRecords[(int) $student['id']] ?? null;
                                 $isAbsentRow = $entry && (int) ($entry['is_absent'] ?? 0) === 1;
                                 ?>
-                                <tr class="marks-row <?= $isAbsentRow ? 'is-absent' : '' ?>" data-locked="<?= $isLocked ? '1' : '0' ?>">
+                                <tr class="marks-row <?= $isAbsentRow ? 'is-absent' : '' ?>" data-locked="<?= $isLocked ? '1' : '0' ?>" data-student-id="<?= e((string) $student['id']) ?>">
                                     <td class="mono" data-label="Enrollment"><?= e($student['enrollment_no']) ?></td>
                                     <td class="marks-name-cell" data-label="Student Name"><?= e($student['full_name']) ?></td>
                                     <td class="marks-value-cell" data-label="Marks">
@@ -341,19 +382,61 @@ render_dashboard_layout('Upload Marks', 'teacher', 'marks', 'faculty/marks.css',
                 <div class="notice-box"><?= e($csvNotice) ?></div>
                 <button class="btn-primary" type="submit" <?= $isLocked ? 'disabled' : '' ?>>Upload CSV</button>
             </form>
+
+            <?php if ($csvRestrictionIssues): ?>
+                <section class="marks-csv-issues-panel" data-csv-issues>
+                    <div class="card-head marks-csv-issues-head">
+                        <div>
+                            <p class="eyebrow">CSV Review</p>
+                            <h4 class="card-title">Rows Reset to 0</h4>
+                        </div>
+                        <span class="marks-csv-issues-count"><?= e((string) $csvIssueCount) ?> Issue<?= $csvIssueCount === 1 ? '' : 's' ?></span>
+                    </div>
+                    <div class="notice-box danger marks-csv-issues-note"><?= e($csvIssuesSummary) ?></div>
+                    <div class="table-wrap marks-csv-issues-wrap" data-csv-issues-table-wrap>
+                        <table class="marks-upload-list-table marks-csv-issues-table">
+                            <thead>
+                            <tr>
+                                <th>Enrollment</th>
+                                <th>Student Name</th>
+                                <th>Entered Marks</th>
+                                <th>Allowed Max</th>
+                                <th>Saved As</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <?php foreach ($csvRestrictionIssues as $issue): ?>
+                                <tr data-csv-issue-row data-student-id="<?= e((string) ($issue['student_id'] ?? 0)) ?>">
+                                    <td class="mono" data-label="Enrollment"><?= e((string) ($issue['enrollment_no'] ?? '')) ?></td>
+                                    <td data-label="Student Name"><?= e((string) ($issue['full_name'] ?? '')) ?></td>
+                                    <td class="mono" data-label="Entered Marks" data-csv-entered-marks><?= e((string) ($issue['entered_marks'] ?? '')) ?></td>
+                                    <td class="mono" data-label="Allowed Max"><?= e((string) ($issue['allowed_max'] ?? '')) ?></td>
+                                    <td class="mono" data-label="Saved As"><?= e((string) ($issue['saved_marks'] ?? 0)) ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="empty-state marks-csv-issues-empty" data-csv-issues-empty hidden><?= e($csvIssuesResolvedMessage) ?></div>
+                </section>
+            <?php endif; ?>
         </article>
     </section>
 
-    <article class="data-card">
-        <div class="card-head">
+    <article class="data-card marks-upload-report-card">
+        <div class="card-head marks-upload-report-head">
             <div>
-                <p class="eyebrow">Existing Uploads</p>
+                <p class="eyebrow">Marks Upload Report</p>
                 <h3 class="card-title">Saved mark sheets for <?= e(semester_label($semesterNo)) ?></h3>
+                <p class="card-subtitle"><?= e($uploadReportSubtitle) ?></p>
             </div>
+            <?php if ($uploads): ?>
+                <span class="marks-upload-report-count"><?= e((string) $uploadReportCount) ?> Upload<?= $uploadReportCount === 1 ? '' : 's' ?></span>
+            <?php endif; ?>
         </div>
         <?php if ($uploads): ?>
             <div class="table-wrap marks-upload-list-wrap">
-                <table class="marks-upload-list-table">
+                <table class="marks-upload-list-table marks-upload-report-table">
                     <thead>
                     <tr>
                         <th>Subject</th>
@@ -373,11 +456,11 @@ render_dashboard_layout('Upload Marks', 'teacher', 'marks', 'faculty/marks.css',
                             : $isLocked;
                         ?>
                         <tr>
-                            <td data-label="Subject"><?= e($uploadSubjectLabel) ?></td>
-                            <td data-label="Exam"><?= e($upload['exam_type']) ?></td>
-                            <td data-label="Max Marks"><?= e((string) $upload['max_marks']) ?></td>
-                            <td data-label="Uploaded"><?= e((string) $upload['uploaded_at']) ?></td>
-                            <td data-label="Action">
+                            <td data-label="Subject"><span class="marks-upload-subject"><?= e($uploadSubjectLabel) ?></span></td>
+                            <td data-label="Exam"><span class="badge info marks-upload-exam"><?= e((string) $upload['exam_type']) ?></span></td>
+                            <td data-label="Max Marks"><span class="marks-upload-max"><?= e((string) $upload['max_marks']) ?></span></td>
+                            <td data-label="Uploaded"><span class="marks-upload-time"><?= e((string) $upload['uploaded_at']) ?></span></td>
+                            <td class="marks-upload-action-cell" data-label="Action">
                                 <form method="post">
                                     <input type="hidden" name="action" value="delete_upload">
                                     <input type="hidden" name="department_filter" value="<?= e($departmentQueryValue) ?>">

@@ -53,6 +53,7 @@ function nav_items(string $role): array
             'dashboard' => ['label' => 'Overview', 'path' => 'admin/dashboard.php'],
             'students' => ['label' => 'Students', 'path' => 'admin/students.php'],
             'faculty' => ['label' => 'Faculty', 'path' => 'admin/faculty.php'],
+            'requests' => ['label' => 'Requests', 'path' => 'admin/requests.php'],
             'attendance' => ['label' => 'Attendance', 'path' => 'admin/attendance.php'],
             'marks' => ['label' => 'Marks', 'path' => 'admin/marks.php'],
             'subjects' => ['label' => 'Subjects', 'path' => 'admin/subjects.php'],
@@ -88,6 +89,7 @@ function render_dashboard_layout(string $title, string $role, string $activeKey,
 {
     render_head($title, $pageCss, 'dashboard-body role-' . $role);
     $user = current_user();
+    $pendingSupportApprovals = $role === 'admin' ? support_request_pending_count() : 0;
     ?>
     <div class="sidebar-backdrop" data-sidebar-close></div>
     <div class="app-shell">
@@ -103,7 +105,17 @@ function render_dashboard_layout(string $title, string $role, string $activeKey,
             </div>
             <nav class="sidebar-nav">
                 <?php foreach (nav_items($role) as $key => $item): ?>
-                    <a class="sidebar-link <?= $key === $activeKey ? 'is-active' : '' ?>" href="<?= e(url($item['path'])) ?>">
+                    <?php
+                    $hasPendingIndicator = $role === 'admin' && $key === 'requests' && $pendingSupportApprovals > 0;
+                    $linkClasses = ['sidebar-link'];
+                    if ($key === $activeKey) {
+                        $linkClasses[] = 'is-active';
+                    }
+                    if ($hasPendingIndicator) {
+                        $linkClasses[] = 'has-pending-indicator';
+                    }
+                    ?>
+                    <a class="<?= e(implode(' ', $linkClasses)) ?>" href="<?= e(url($item['path'])) ?>"<?= $hasPendingIndicator ? ' aria-label="' . e($item['label'] . ' (' . $pendingSupportApprovals . ' pending approvals)') . '"' : '' ?>>
                         <?= e($item['label']) ?>
                     </a>
                 <?php endforeach; ?>
@@ -170,6 +182,9 @@ function render_auth_layout(string $title, string $subtitle, string $pageCss, st
     <?php
     render_foot($pageJs);
 }
+
+
+
 
 
 

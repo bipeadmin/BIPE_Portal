@@ -41,14 +41,22 @@ $uploadSemesterNo = is_post()
     : ($filterSemesterNo > 0 ? $filterSemesterNo : ($uploadYearLevel > 0 ? $uploadYearLevel * 2 : 2));
 [$uploadYearLevel, $uploadSemesterNo] = $normalizeClassSelection($uploadYearLevel, $uploadSemesterNo);
 
-$redirectUrl = 'admin/subjects.php?department_id=' . $uploadDepartmentId . '&year_level=' . $uploadYearLevel . '&semester_no=' . $uploadSemesterNo;
+$uploadRedirectUrl = 'admin/subjects.php?department_id=' . $uploadDepartmentId . '&year_level=' . $uploadYearLevel . '&semester_no=' . $uploadSemesterNo;
 if (trim($search) !== '') {
-    $redirectUrl .= '&search=' . urlencode($search);
+    $uploadRedirectUrl .= '&search=' . urlencode($search);
+}
+
+$filterRedirectUrl = 'admin/subjects.php?department_id=' . $filterDepartmentId . '&year_level=' . $filterYearLevel . '&semester_no=' . $filterSemesterNo;
+if (trim($search) !== '') {
+    $filterRedirectUrl .= '&search=' . urlencode($search);
 }
 
 if (is_post()) {
+    $action = (string) post('action');
+    $redirectUrl = $action === 'delete_subject' ? $filterRedirectUrl : $uploadRedirectUrl;
+
     try {
-        if ((string) post('action') === 'bulk_import_subjects') {
+        if ($action === 'bulk_import_subjects') {
             $csvPath = assert_uploaded_file((array) ($_FILES['subject_file'] ?? []), ['csv'], (int) config('uploads.max_csv_bytes', 2097152));
             $result = bulk_import_subjects_csv($csvPath, $uploadDepartmentId, $uploadYearLevel, $uploadSemesterNo);
             $department = department_by_id($uploadDepartmentId);
@@ -61,8 +69,23 @@ if (is_post()) {
             );
             flash('success', 'Bulk subject import complete. Inserted ' . $result['inserted'] . ' and updated ' . $result['updated'] . ' subjects.');
         }
+
+        if ($action === 'delete_subject') {
+            $subject = delete_subject_row((int) post('subject_id'));
+            $departmentLabel = $subject['short_name'] ?? ($subject['department_name'] ?? ('Department ' . (int) $subject['department_id']));
+            audit_log(
+                'admin',
+                (string) (current_user()['username'] ?? 'admin'),
+                'SUBJECT_DELETE',
+                $departmentLabel . ' ' . semester_label((int) $subject['semester_no']) . ' ' . $subject['subject_code'] . ' deleted'
+            );
+            flash('success', 'Subject deleted successfully.');
+        }
     } catch (Throwable $exception) {
-        flash_exception($exception, 'Subject import could not be completed right now. Please review the selected class and CSV file, then try again.');
+        $message = $action === 'delete_subject'
+            ? 'Subject could not be deleted right now. Please review its existing usage and try again.'
+            : 'Subject import could not be completed right now. Please review the selected class and CSV file, then try again.';
+        flash_exception($exception, $message);
     }
 
     redirect_to($redirectUrl);
@@ -216,6 +239,7 @@ render_dashboard_layout('Subject Management', 'admin', 'subjects', 'admin/subjec
                         <th>Subject Code</th>
                         <th>Subject Name</th>
                         <th>Students</th>
+                        <th>Action</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -227,6 +251,13 @@ render_dashboard_layout('Subject Management', 'admin', 'subjects', 'admin/subjec
                             <td data-label="Subject Code" class="mono"><?= e($row['subject_code']) ?></td>
                             <td data-label="Subject Name"><?= e($row['subject_name']) ?></td>
                             <td data-label="Students"><?= e((string) $row['student_count']) ?></td>
+                            <td class="subject-action-cell" data-label="Action">
+                                <form method="post">
+                                    <input type="hidden" name="action" value="delete_subject">
+                                    <input type="hidden" name="subject_id" value="<?= e((string) $row['id']) ?>">
+                                    <button class="btn-danger" type="submit" data-confirm="Delete this subject? If marks or assignments already use it, deletion will be stopped.">Delete</button>
+                                </form>
+                            </td>
                         </tr>
                     <?php endforeach; ?>
                     </tbody>
@@ -238,4 +269,5 @@ render_dashboard_layout('Subject Management', 'admin', 'subjects', 'admin/subjec
     </article>
     <?php
 });
+
 

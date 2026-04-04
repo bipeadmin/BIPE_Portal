@@ -44,8 +44,18 @@
 
 .role-admin .subject-directory-table {
   width: 100%;
-  min-width: 880px;
+  min-width: 980px;
   table-layout: auto;
+}
+
+.role-admin .subject-directory-table th:last-child,
+.role-admin .subject-directory-table td:last-child {
+  width: 128px;
+}
+
+.role-admin .subject-action-cell form,
+.role-admin .subject-action-cell button {
+  width: 100%;
 }
 
 .role-admin .subject-directory-table td {
@@ -154,8 +164,19 @@
     color: var(--muted);
   }
 
+  .role-admin .subject-directory-table td[data-label='Action'] {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .role-admin .subject-action-cell form,
+  .role-admin .subject-action-cell button {
+    width: 100%;
+  }
+
   .role-admin .subject-directory-wrap thead th {
     position: static;
     backdrop-filter: none;
   }
 }
+

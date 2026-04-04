@@ -1,1 +1,200 @@
-.role-student .table-wrap table { min-width: 760px; }
+.role-student .student-marks-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(37, 99, 235, 0.12);
+  background: rgba(37, 99, 235, 0.08);
+  color: var(--primary);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+}
+.role-student .student-marks-summary .stat-card {
+  min-height: 100%;
+}
+
+.role-student .student-marks-report {
+  overflow: hidden;
+}
+
+.role-student .student-marks-table-wrap {
+  border-radius: 24px;
+  border: 1px solid rgba(30, 64, 175, 0.08);
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.role-student .student-marks-matrix {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.role-student .student-marks-matrix thead {
+  background: rgba(37, 99, 235, 0.06);
+}
+
+.role-student .student-marks-matrix th,
+.role-student .student-marks-matrix td {
+  padding: 18px 12px;
+  border-bottom: 1px solid rgba(30, 64, 175, 0.08);
+  text-align: center;
+  vertical-align: middle;
+}
+
+.role-student .student-marks-matrix th {
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #677892;
+}
+
+.role-student .student-marks-matrix th span,
+.role-student .student-marks-matrix th small {
+  display: block;
+}
+
+.role-student .student-marks-matrix th small {
+  margin-top: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--muted);
+}
+
+.role-student .student-marks-matrix tbody tr:hover {
+  background: rgba(37, 99, 235, 0.03);
+}
+
+.role-student .student-marks-subject-cell {
+  width: 18%;
+  min-width: 180px;
+  text-align: left;
+  font-size: 18px;
+  line-height: 1.45;
+  color: var(--heading);
+}
+
+.role-student .student-mark-value {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 42px;
+  font-weight: 600;
+  color: var(--heading);
+}
+
+.role-student .student-mark-value.is-empty {
+  color: #94a3b8;
+}
+
+.role-student .student-mark-value.is-absent {
+  color: var(--danger);
+}
+
+.role-student .student-mark-total-cell {
+  font-weight: 700;
+  color: var(--heading);
+}
+
+.role-student .student-marks-card-list {
+  display: none;
+  gap: 14px;
+}
+
+.role-student .student-mark-card {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  border-radius: 24px;
+  border: 1px solid rgba(30, 64, 175, 0.08);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.92));
+  box-shadow: var(--shadow-sm);
+}
+
+.role-student .student-mark-card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.role-student .student-mark-card-head h4 {
+  font-size: 22px;
+}
+
+.role-student .student-mark-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.role-student .student-mark-metric-card,
+.role-student .student-mark-footer-item {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(30, 64, 175, 0.08);
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.role-student .student-mark-metric-label,
+.role-student .student-mark-footer-item span {
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.role-student .student-mark-metric-card small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.role-student .student-mark-metric-card strong,
+.role-student .student-mark-footer-item strong {
+  font-size: 20px;
+  color: var(--heading);
+}
+
+.role-student .student-mark-card-footer {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+@media (max-width: 920px) {
+  .role-student .student-marks-table-wrap {
+    display: none;
+  }
+
+  .role-student .student-marks-card-list {
+    display: grid;
+  }
+}
+
+@media (max-width: 720px) {
+  .role-student .student-marks-card-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .role-student .student-mark-card-grid,
+  .role-student .student-mark-card-footer {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .role-student .student-mark-card-grid,
+  .role-student .student-mark-card-footer {
+    grid-template-columns: 1fr;
+  }
+}
+

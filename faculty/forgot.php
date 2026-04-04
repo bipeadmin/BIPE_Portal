@@ -8,77 +8,62 @@ if (current_role() === 'teacher') {
 }
 
 if (is_post()) {
-    $action = (string) post('action');
-    $email = trim((string) post('email'));
+    $facultyId = trim((string) post('teacher_code'));
+    $requestType = trim((string) post('request_type'));
+    $newPassword = (string) post('new_password');
 
     try {
-        if ($action === 'request') {
-            rate_limit_or_fail('otp_request_teacher:' . strtolower($email), (int) config('security.otp_rate_limit', 5), 600);
-            $result = request_password_reset_delivery('teacher', $email);
-            flash('success', password_reset_request_success_message($result['preview_otp'] ?? null));
-            redirect_to('faculty/forgot.php');
+        if ($facultyId === '') {
+            throw new RuntimeException('Faculty ID is required.');
         }
 
-        if ($action === 'reset') {
-            rate_limit_or_fail('otp_reset_teacher:' . strtolower($email), (int) config('security.otp_rate_limit', 5), 600);
-            $newPassword = (string) post('new_password');
-            $confirmPassword = (string) post('confirm_password');
-            if ($newPassword !== $confirmPassword) {
-                flash('error', 'Password confirmation does not match.');
-                redirect_to('faculty/forgot.php');
-            }
-
-            if (reset_password_with_otp('teacher', $email, trim((string) post('otp')), $newPassword)) {
-                flash('success', 'Faculty password updated successfully. Please login again.');
-                redirect_to('faculty/login.php');
-            }
-
-            flash('error', 'Invalid or expired OTP. Request a new code and try again.');
-            redirect_to('faculty/forgot.php');
+        if (!in_array($requestType, ['forgot_password', 'forgot_faculty_id'], true)) {
+            throw new RuntimeException('Select a valid request type.');
         }
+
+        if ($requestType === 'forgot_password' && trim($newPassword) === '') {
+            throw new RuntimeException('Enter a new password request value.');
+        }
+
+        $request = create_teacher_access_request($facultyId, $requestType, $newPassword);
+        audit_log(
+            'teacher',
+            (string) ($request['requester_identifier'] ?? $facultyId),
+            'SUPPORT_REQUEST_SUBMITTED',
+            support_request_type_label((string) ($request['request_type'] ?? $requestType))
+        );
+        flash('info', 'Wait for admin approval.');
     } catch (Throwable $exception) {
-        flash_exception($exception, 'Password reset could not be completed right now. Please try again later.');
-        redirect_to('faculty/forgot.php');
+        flash_exception($exception, 'Your request could not be submitted right now. Please review the form details and try again.');
     }
+
+    redirect_to('faculty/forgot.php');
 }
 
-render_auth_layout('Faculty Password Reset', 'Use your registered faculty email to request a 6-digit OTP and reset your password.', 'faculty/forgot.css', 'faculty/forgot.js', function (): void {
+render_auth_layout('Faculty Password Help', 'Raise a faculty access request for password or faculty ID support.', 'faculty/forgot.css', 'faculty/forgot.js', function (): void {
     ?>
-    <div class="stack">
-        <form method="post" class="form-grid">
-            <input type="hidden" name="action" value="request">
+    <div class="stack faculty-forgot-shell">
+        <div class="notice-box warning">Submit your faculty recovery request below. The request will wait in the admin approval queue until it is reviewed.</div>
+        <form method="post" class="form-grid faculty-forgot-form" data-faculty-forgot-form>
             <div class="form-group">
-                <label class="form-label" for="faculty-reset-email-request">Faculty Email</label>
-                <input class="form-input" id="faculty-reset-email-request" name="email" type="email" autocomplete="email" placeholder="name@example.com" required>
+                <label class="form-label" for="faculty-forgot-id">Faculty ID</label>
+                <input class="form-input" id="faculty-forgot-id" name="teacher_code" placeholder="Enter faculty ID" autocomplete="username" required>
             </div>
-            <button class="btn-primary" type="submit">Send OTP</button>
-        </form>
-        <div class="notice-box warning">Password reset codes are delivered to the registered faculty email address and expire in 10 minutes.</div>
-        <form method="post" class="form-grid">
-            <input type="hidden" name="action" value="reset">
-            <div class="form-grid two">
-                <div class="form-group">
-                    <label class="form-label" for="faculty-reset-email">Faculty Email</label>
-                    <input class="form-input" id="faculty-reset-email" name="email" type="email" autocomplete="email" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label" for="faculty-reset-otp">OTP</label>
-                    <input class="form-input mono" id="faculty-reset-otp" name="otp" maxlength="6" placeholder="6-digit code" inputmode="numeric" required>
-                </div>
+            <div class="form-group">
+                <label class="form-label" for="faculty-request-type">Request Type</label>
+                <select class="form-select" id="faculty-request-type" name="request_type" data-forgot-request-type required>
+                    <option value="">Select request</option>
+                    <option value="forgot_password">Forget Password</option>
+                    <option value="forgot_faculty_id">Forget Faculty ID</option>
+                </select>
             </div>
-            <div class="form-grid two">
-                <div class="form-group">
-                    <label class="form-label" for="faculty-reset-password">New Password</label>
-                    <input class="form-input" id="faculty-reset-password" name="new_password" type="password" autocomplete="new-password" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label" for="faculty-reset-confirm">Confirm Password</label>
-                    <input class="form-input" id="faculty-reset-confirm" name="confirm_password" type="password" autocomplete="new-password" required>
-                </div>
+            <div class="form-group faculty-forgot-password-group is-hidden" data-forgot-password-group>
+                <label class="form-label" for="faculty-new-password">New Password</label>
+                <input class="form-input" id="faculty-new-password" name="new_password" type="password" autocomplete="new-password" placeholder="Enter new password request">
             </div>
-            <div class="notice-box">Use a strong password with uppercase, lowercase, number, and special character.</div>
+            <div class="notice-box">If you select <strong>Forget Password</strong>, enter the new password you want to request. If you select <strong>Forget Faculty ID</strong>, no extra field is needed.</div>
             <div class="form-actions">
-                <button class="btn-primary" type="submit">Reset Password</button>
+                <button class="btn-primary" type="submit">Submit Request</button>
                 <a class="btn-secondary" href="<?= e(url('faculty/login.php')) ?>">Back to Login</a>
             </div>
         </form>

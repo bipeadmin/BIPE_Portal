@@ -4,7 +4,8 @@
 
 .role-teacher .marks-entry-grid > .data-card,
 .role-teacher .marks-sheet-wrap,
-.role-teacher .marks-upload-list-wrap {
+.role-teacher .marks-upload-list-wrap,
+.role-teacher .marks-csv-issues-wrap {
   min-width: 0;
 }
 
@@ -137,12 +138,56 @@
   align-self: start;
 }
 
-.role-teacher .marks-csv-form .notice-box {
+.role-teacher .marks-csv-form .notice-box,
+.role-teacher .marks-csv-issues-note {
   margin: 0;
 }
 
 .role-teacher .marks-csv-form .btn-primary {
   justify-self: start;
+}
+
+.role-teacher .marks-csv-issues-panel {
+  display: grid;
+  gap: 14px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(30, 64, 175, 0.12);
+}
+
+.role-teacher .marks-csv-issues-head {
+  margin-bottom: 0;
+}
+
+.role-teacher .marks-csv-issues-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(220, 38, 38, 0.08);
+  color: var(--danger);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+
+.role-teacher .marks-csv-issues-empty {
+  margin: 0;
+}
+
+.role-teacher .marks-csv-issues-table th:nth-child(1),
+.role-teacher .marks-csv-issues-table td:nth-child(1) {
+  width: 128px;
+}
+
+.role-teacher .marks-csv-issues-table th:nth-child(3),
+.role-teacher .marks-csv-issues-table td:nth-child(3),
+.role-teacher .marks-csv-issues-table th:nth-child(4),
+.role-teacher .marks-csv-issues-table td:nth-child(4),
+.role-teacher .marks-csv-issues-table th:nth-child(5),
+.role-teacher .marks-csv-issues-table td:nth-child(5) {
+  width: 112px;
 }
 
 @media (max-width: 1100px) {
@@ -173,7 +218,8 @@
     background: transparent;
   }
 
-  .role-teacher .marks-upload-list-wrap {
+  .role-teacher .marks-upload-list-wrap,
+  .role-teacher .marks-csv-issues-wrap {
     overflow-x: visible;
     border: none;
     background: transparent;
@@ -275,4 +321,121 @@
   .role-teacher .marks-upload-list-table td[data-label='Action'] button {
     width: 100%;
   }
+
+  .role-teacher .marks-csv-issues-count {
+    align-self: flex-start;
+  }
 }
+
+.role-teacher .marks-upload-report-card,
+.role-teacher .marks-upload-report-head {
+  min-width: 0;
+}
+
+.role-teacher .marks-upload-list-wrap {
+  max-height: clamp(320px, 58vh, 500px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.role-teacher .marks-upload-report-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: rgba(240, 249, 255, 0.98);
+}
+
+.role-teacher .marks-upload-report-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.08);
+  color: var(--primary);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.role-teacher .marks-upload-subject {
+  display: inline-block;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.role-teacher .marks-upload-exam {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: max-content;
+  max-width: 100%;
+  white-space: nowrap;
+  word-break: normal;
+  overflow-wrap: normal;
+  writing-mode: horizontal-tb;
+  text-orientation: mixed;
+}
+
+.role-teacher .marks-upload-max {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 54px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.05);
+  color: var(--ink);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+}
+
+.role-teacher .marks-upload-time {
+  display: inline-block;
+  color: var(--muted);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.role-teacher .marks-upload-action-cell form {
+  width: 100%;
+}
+
+.role-teacher .marks-upload-action-cell .btn-danger {
+  min-width: 112px;
+}
+
+@media (max-width: 720px) {
+  .role-teacher .marks-upload-report-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .role-teacher .marks-upload-report-count {
+    align-self: flex-start;
+  }
+
+  .role-teacher .marks-upload-list-wrap {
+    max-height: min(70vh, 540px);
+  }
+
+  .role-teacher .marks-upload-report-table td[data-label='Exam'],
+  .role-teacher .marks-upload-report-table td[data-label='Max Marks'],
+  .role-teacher .marks-upload-report-table td[data-label='Uploaded'] {
+    align-items: center;
+  }
+
+  .role-teacher .marks-upload-action-cell {
+    padding-top: 14px;
+    background: rgba(37, 99, 235, 0.03);
+  }
+
+  .role-teacher .marks-upload-action-cell .btn-danger {
+    width: 100%;
+  }
+}
+
+

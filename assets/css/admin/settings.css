@@ -47,8 +47,174 @@
   text-align: left;
 }
 
+.role-admin .settings-mark-types-wrap,
+.role-admin .settings-lock-matrix-wrap {
+  max-height: clamp(320px, 58vh, 640px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.role-admin .settings-mark-types-table,
+.role-admin .settings-lock-matrix-table {
+  width: 100%;
+  min-width: 0;
+  table-layout: auto;
+}
+
+.role-admin .settings-mark-types-table td,
+.role-admin .settings-lock-matrix-table td {
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+.role-admin .settings-lock-matrix-table td:first-child {
+  min-width: 220px;
+}
+
+.role-admin .settings-lock-cell .inline-actions {
+  align-items: flex-start;
+}
+
+.role-admin .settings-lock-cell .badge {
+  white-space: nowrap;
+}
+
 @media (max-width: 720px) {
   .role-admin .admin-profile-panel {
     padding: 20px 16px;
+  }
+
+  .role-admin .card-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .role-admin .card-head .inline-actions,
+  .role-admin .settings-lock-cell .inline-actions {
+    display: grid;
+    gap: 10px;
+  }
+
+  .role-admin .card-head .inline-actions form,
+  .role-admin .card-head .inline-actions .btn-danger,
+  .role-admin .card-head .inline-actions .btn-success,
+  .role-admin .card-head .inline-actions .btn-secondary,
+  .role-admin .btn-primary,
+  .role-admin .btn-danger,
+  .role-admin .btn-success {
+    width: 100%;
+  }
+
+  .role-admin .radio-list {
+    gap: 10px;
+  }
+
+  .role-admin .radio-list .option-card label {
+    align-items: flex-start;
+  }
+
+  .role-admin .settings-mark-types-wrap,
+  .role-admin .settings-lock-matrix-wrap {
+    max-height: min(62vh, 560px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    border: none;
+    background: transparent;
+  }
+
+  .role-admin .settings-mark-types-table,
+  .role-admin .settings-mark-types-table thead,
+  .role-admin .settings-mark-types-table tbody,
+  .role-admin .settings-mark-types-table tr,
+  .role-admin .settings-mark-types-table th,
+  .role-admin .settings-mark-types-table td,
+  .role-admin .settings-lock-matrix-table,
+  .role-admin .settings-lock-matrix-table thead,
+  .role-admin .settings-lock-matrix-table tbody,
+  .role-admin .settings-lock-matrix-table tr,
+  .role-admin .settings-lock-matrix-table th,
+  .role-admin .settings-lock-matrix-table td {
+    display: block;
+    width: 100% !important;
+  }
+
+  .role-admin .settings-mark-types-table thead,
+  .role-admin .settings-lock-matrix-table thead {
+    display: none;
+  }
+
+  .role-admin .settings-mark-types-table tbody,
+  .role-admin .settings-lock-matrix-table tbody {
+    display: grid;
+    gap: 12px;
+  }
+
+  .role-admin .settings-mark-types-table tbody tr,
+  .role-admin .settings-lock-matrix-table tbody tr {
+    overflow: hidden;
+    border: 1px solid rgba(30, 64, 175, 0.12);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .role-admin .settings-mark-types-table td,
+  .role-admin .settings-lock-matrix-table td {
+    display: grid;
+    grid-template-columns: minmax(110px, 42%) minmax(0, 1fr);
+    gap: 12px;
+    align-items: start;
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(30, 64, 175, 0.08);
+    text-align: left;
+  }
+
+  .role-admin .settings-mark-types-table td:last-child,
+  .role-admin .settings-lock-matrix-table td:last-child {
+    border-bottom: none;
+  }
+
+  .role-admin .settings-mark-types-table td::before,
+  .role-admin .settings-lock-matrix-table td::before {
+    content: attr(data-label);
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .role-admin .settings-mark-types-table td[data-label='Action'] {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .role-admin .settings-mark-types-table td[data-label='Action'] form,
+  .role-admin .settings-mark-types-table td[data-label='Action'] button {
+    width: 100%;
+  }
+
+  .role-admin .settings-lock-matrix-table td[data-label='Department'] {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    background: rgba(239, 246, 255, 0.78);
+  }
+
+  .role-admin .settings-lock-cell {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .role-admin .settings-lock-cell .inline-actions {
+    width: 100%;
+  }
+
+  .role-admin .settings-lock-cell .inline-actions .badge {
+    justify-self: start;
+  }
+
+  .role-admin .settings-lock-cell .inline-actions .btn-secondary {
+    width: 100%;
   }
 }

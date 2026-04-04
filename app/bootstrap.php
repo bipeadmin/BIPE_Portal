@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 $GLOBALS['bipe_v2_config'] = require __DIR__ . '/../config/config.php';
@@ -60,5 +61,3 @@ set_exception_handler(static function (Throwable $exception): void {
 
     render_error_response(500, get_class($exception), $message);
 });
-
-

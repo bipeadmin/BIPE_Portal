@@ -86,7 +86,7 @@ render_auth_layout('Student Registration', 'Activate a student account using the
                 <input class="form-input" id="student-register-password-confirm" name="confirm_password" type="password" autocomplete="new-password" required>
             </div>
         </div>
-        <div class="notice-box">Mobile number aur profile image optional hain. Email saved here will be used for OTP-based password reset.</div>
+        <div class="notice-box">Mobile number aur profile image optional hain. Email saved here will be used for account records.</div>
         <div class="form-actions">
             <button class="btn-primary" type="submit">Activate Account</button>
             <a class="btn-secondary" href="<?= e(url('student/login.php')) ?>">Back to Login</a>

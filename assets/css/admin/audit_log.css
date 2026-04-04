@@ -1,1 +1,116 @@
-.table-wrap td:nth-child(5) { min-width: 260px; }
+.role-admin .audit-log-wrap {
+  max-height: clamp(380px, 66vh, 780px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.role-admin .audit-log-table {
+  width: 100%;
+  min-width: 1060px;
+  table-layout: auto;
+}
+
+.role-admin .audit-log-table td {
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+.role-admin .audit-log-table td:nth-child(5) {
+  min-width: 180px;
+}
+
+.role-admin .audit-log-table td:nth-child(6) {
+  min-width: 320px;
+}
+
+.role-admin .audit-log-table .badge {
+  white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  .role-admin .card-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .role-admin .card-head form,
+  .role-admin .filters .btn-primary {
+    width: 100%;
+  }
+
+  .role-admin .audit-log-wrap {
+    max-height: min(66vh, 620px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    border: none;
+    background: transparent;
+  }
+
+  .role-admin .audit-log-table,
+  .role-admin .audit-log-table thead,
+  .role-admin .audit-log-table tbody,
+  .role-admin .audit-log-table tr,
+  .role-admin .audit-log-table th,
+  .role-admin .audit-log-table td {
+    display: block;
+    width: 100% !important;
+  }
+
+  .role-admin .audit-log-table {
+    min-width: 0;
+    background: transparent;
+  }
+
+  .role-admin .audit-log-table thead {
+    display: none;
+  }
+
+  .role-admin .audit-log-table tbody {
+    display: grid;
+    gap: 14px;
+  }
+
+  .role-admin .audit-log-table tbody tr {
+    overflow: hidden;
+    border: 1px solid rgba(30, 64, 175, 0.12);
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .role-admin .audit-log-table td {
+    display: grid;
+    grid-template-columns: minmax(108px, 42%) minmax(0, 1fr);
+    gap: 12px;
+    align-items: start;
+    padding: 11px 14px;
+    border-bottom: 1px solid rgba(30, 64, 175, 0.08);
+  }
+
+  .role-admin .audit-log-table td:last-child {
+    border-bottom: none;
+  }
+
+  .role-admin .audit-log-table td::before {
+    content: attr(data-label);
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .role-admin .audit-log-table td[data-label='Timestamp'] {
+    background: rgba(239, 246, 255, 0.72);
+  }
+
+  .role-admin .audit-log-table td[data-label='Details'] {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .role-admin .audit-log-table .badge {
+    justify-self: start;
+  }
+}

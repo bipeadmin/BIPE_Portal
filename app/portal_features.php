@@ -464,7 +464,7 @@ function clear_audit_logs(): void
     execute_sql('DELETE FROM audit_logs');
 }
 
-function parse_marks_csv_records_with_absent(string $tmpName, array $studentMap): array
+function parse_marks_csv_records_with_absent(string $tmpName, array $studentMap, float $maxMarks): array
 {
     $handle = fopen($tmpName, 'rb');
     if (!$handle) {
@@ -479,12 +479,19 @@ function parse_marks_csv_records_with_absent(string $tmpName, array $studentMap)
 
     $normalized = [];
     foreach ($header as $index => $column) {
-        $normalized[strtolower(trim((string) $column))] = $index;
+        $columnName = strtolower(trim((string) $column));
+        $columnName = (string) preg_replace('/^\xEF\xBB\xBF/', '', $columnName);
+        $columnName = (string) preg_replace('/\s+/', ' ', $columnName);
+        $normalized[$columnName] = $index;
     }
 
     $enrollmentIndex = $normalized['enrollment no'] ?? $normalized['enrollment'] ?? $normalized['enrollment number'] ?? null;
     $marksIndex = $normalized['marks'] ?? $normalized['score'] ?? null;
-    $absentIndex = $normalized['absent'] ?? $normalized['is absent'] ?? null;
+    $absentIndex = $normalized['absent (true/false)']
+        ?? $normalized['absent(true/false)']
+        ?? $normalized['absent']
+        ?? $normalized['is absent']
+        ?? null;
 
     if ($enrollmentIndex === null || $marksIndex === null) {
         fclose($handle);
@@ -492,36 +499,84 @@ function parse_marks_csv_records_with_absent(string $tmpName, array $studentMap)
     }
 
     $records = [];
+    $violations = [];
     while (($row = fgetcsv($handle)) !== false) {
         $enrollment = strtoupper(trim((string) ($row[$enrollmentIndex] ?? '')));
         if ($enrollment === '' || !isset($studentMap[$enrollment])) {
             continue;
         }
 
+        $student = $studentMap[$enrollment];
+        $studentId = (int) ($student['id'] ?? 0);
+        if ($studentId <= 0) {
+            continue;
+        }
+
         $absent = false;
         if ($absentIndex !== null) {
             $absentValue = strtolower(trim((string) ($row[$absentIndex] ?? '')));
-            $absent = in_array($absentValue, ['yes', 'y', 'true', '1', 'ab', 'absent'], true);
+            if ($absentValue !== '') {
+                if (in_array($absentValue, ['yes', 'y', 'true', 't', '1', 'ab', 'absent'], true)) {
+                    $absent = true;
+                } elseif (in_array($absentValue, ['no', 'n', 'false', 'f', '0', 'present', 'p'], true)) {
+                    $absent = false;
+                } else {
+                    fclose($handle);
+                    throw new RuntimeException('Absent value for enrollment ' . $enrollment . ' must be True or False.');
+                }
+            }
         }
 
         $marksValue = trim((string) ($row[$marksIndex] ?? ''));
         if ($marksValue === '' && !$absent) {
             continue;
         }
-        if (!$absent && !is_numeric($marksValue)) {
+        if ($absent) {
+            $records[$studentId] = [
+                'marks' => null,
+                'absent' => true,
+            ];
+            unset($violations[$studentId]);
+            continue;
+        }
+        if (!is_numeric($marksValue)) {
             fclose($handle);
             throw new RuntimeException('Invalid marks value found for enrollment ' . $enrollment . '.');
         }
 
-        $records[$studentMap[$enrollment]] = [
-            'marks' => $absent ? null : (float) $marksValue,
-            'absent' => $absent,
+        $numericMarks = (float) $marksValue;
+        if ($numericMarks < 0) {
+            fclose($handle);
+            throw new RuntimeException('Marks cannot be less than 0 for enrollment ' . $enrollment . '.');
+        }
+
+        $savedMarks = $numericMarks;
+        if ($numericMarks > $maxMarks) {
+            $savedMarks = 0.0;
+            $violations[$studentId] = [
+                'student_id' => $studentId,
+                'enrollment_no' => (string) ($student['enrollment_no'] ?? $enrollment),
+                'full_name' => (string) ($student['full_name'] ?? ''),
+                'entered_marks' => $marksValue,
+                'allowed_max' => $maxMarks,
+                'saved_marks' => $savedMarks,
+            ];
+        } else {
+            unset($violations[$studentId]);
+        }
+
+        $records[$studentId] = [
+            'marks' => $savedMarks,
+            'absent' => false,
         ];
     }
 
     fclose($handle);
 
-    return $records;
+    return [
+        'records' => $records,
+        'violations' => array_values($violations),
+    ];
 }
 
 function save_mark_upload_sheet(int $teacherId, int $departmentId, int $semesterNo, int $subjectId, int $markTypeId, array $records): void
@@ -838,40 +893,11 @@ function restore_backup_payload(array $payload): void
 
 function request_admin_password_reset_delivery(string $username): ?array
 {
-    $request = create_admin_otp_request($username);
-    if (!$request) {
-        return null;
-    }
-
-    $preview = dispatch_password_reset_otp(
-        (string) $request['admin']['email'],
-        (string) $request['admin']['full_name'],
-        (string) $request['otp'],
-        'administrator'
-    );
-
-    return ['preview_otp' => $preview, 'admin' => $request['admin']];
+    return null;
 }
 
 function request_password_reset_delivery(string $role, string $email): ?array
 {
-    $request = create_password_reset_otp($role, $email);
-    if (!$request) {
-        return null;
-    }
-
-    $preview = dispatch_password_reset_otp(
-        (string) $request['target']['email'],
-        (string) $request['target']['name'],
-        (string) $request['otp'],
-        $role
-    );
-
-    return ['preview_otp' => $preview, 'target' => $request['target']];
+    return null;
 }
-
-
-
-
-
 

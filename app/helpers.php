@@ -418,11 +418,35 @@ function ensure_runtime_schema_support(): void
         }
     }
 
+    execute_sql(
+        'CREATE TABLE IF NOT EXISTS support_requests (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            category ENUM("request", "feedback", "issue") NOT NULL DEFAULT "request",
+            request_type VARCHAR(80) DEFAULT NULL,
+            requester_role ENUM("teacher", "student", "admin", "guest") NOT NULL DEFAULT "teacher",
+            requester_id INT UNSIGNED DEFAULT NULL,
+            requester_name VARCHAR(190) DEFAULT NULL,
+            requester_identifier VARCHAR(80) DEFAULT NULL,
+            requester_email VARCHAR(190) DEFAULT NULL,
+            subject_line VARCHAR(190) DEFAULT NULL,
+            message_body TEXT DEFAULT NULL,
+            requested_password_hash VARCHAR(255) DEFAULT NULL,
+            status ENUM("pending", "approved", "rejected") NOT NULL DEFAULT "pending",
+            reviewed_by_admin_id INT UNSIGNED DEFAULT NULL,
+            reviewed_at DATETIME DEFAULT NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            INDEX idx_support_requests_category_status (category, status),
+            INDEX idx_support_requests_requester (requester_role, requester_identifier),
+            INDEX idx_support_requests_created_at (created_at),
+            CONSTRAINT fk_support_requests_admin FOREIGN KEY (reviewed_by_admin_id) REFERENCES admins(id) ON DELETE SET NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+    );
+
     foreach (['admins', 'teachers', 'students'] as $role) {
         profile_image_storage_directory($role);
     }
 }
-
 function app_log(string $level, string $message, array $context = []): void
 {
     $logPath = (string) config('logging.path');
@@ -812,6 +836,12 @@ function password_reset_request_success_message(?string $otpPreview = null): str
 
     return $message;
 }
+
+
+
+
+
+
 
 
 

@@ -161,7 +161,7 @@ render_dashboard_layout('Portal Settings', 'admin', 'settings', 'admin/settings.
                     <p class="eyebrow">Password</p>
                     <h3 class="card-title">Change administrator password</h3>
                 </div>
-                <a class="btn-secondary" href="<?= e(url('admin/forgot.php')) ?>">OTP Reset</a>
+
             </div>
             <form method="post" class="form-grid">
                 <input type="hidden" name="action" value="change_password">
@@ -228,15 +228,15 @@ render_dashboard_layout('Portal Settings', 'admin', 'settings', 'admin/settings.
                 </div>
                 <button class="btn-primary" type="submit">Add Mark Type</button>
             </form>
-            <div class="table-wrap">
-                <table>
+            <div class="table-wrap settings-mark-types-wrap">
+                <table class="settings-mark-types-table">
                     <thead><tr><th>Label</th><th>Max Marks</th><th>Action</th></tr></thead>
                     <tbody>
                     <?php foreach ($markTypes as $markType): ?>
                         <tr>
-                            <td><?= e($markType['label']) ?></td>
-                            <td><?= e((string) $markType['max_marks']) ?></td>
-                            <td>
+                            <td data-label="Label"><?= e($markType['label']) ?></td>
+                            <td data-label="Max Marks"><?= e((string) $markType['max_marks']) ?></td>
+                            <td data-label="Action">
                                 <form method="post">
                                     <input type="hidden" name="action" value="delete_mark_type">
                                     <input type="hidden" name="mark_type_id" value="<?= e((string) $markType['id']) ?>">
@@ -262,18 +262,18 @@ render_dashboard_layout('Portal Settings', 'admin', 'settings', 'admin/settings.
                 <form method="post"><input type="hidden" name="action" value="unlock_all"><button class="btn-success" type="submit">Unlock All</button></form>
             </div>
         </div>
-        <div class="table-wrap">
-            <table>
+        <div class="table-wrap settings-lock-matrix-wrap">
+            <table class="settings-lock-matrix-table">
                 <thead><tr><th>Department</th><th>Semester 2</th><th>Semester 4</th><th>Semester 6</th></tr></thead>
                 <tbody>
                 <?php foreach ($departments as $department): ?>
                     <tr>
-                        <td><?= e($department['name']) ?></td>
+                        <td data-label="Department"><?= e($department['name']) ?></td>
                         <?php foreach (semester_numbers() as $semester):
                             $key = (int) $department['id'] . '|' . $semester;
                             $locked = isset($lockedKeys[$key]);
                             ?>
-                            <td>
+                            <td class="settings-lock-cell" data-label="<?= e(semester_label($semester)) ?>">
                                 <form method="post" class="inline-actions">
                                     <input type="hidden" name="action" value="toggle_lock">
                                     <input type="hidden" name="department_id" value="<?= e((string) $department['id']) ?>">
@@ -312,3 +312,6 @@ render_dashboard_layout('Portal Settings', 'admin', 'settings', 'admin/settings.
     </article>
     <?php
 });
+
+
+

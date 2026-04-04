@@ -1,1 +1,89 @@
-.table-wrap td:first-child { width: 240px; }
+.role-admin .grid-2 {
+  align-items: start;
+}
+
+.role-admin .backup-summary-wrap {
+  max-height: clamp(280px, 54vh, 520px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.role-admin .backup-summary-table {
+  width: 100%;
+  min-width: 0;
+  table-layout: auto;
+}
+
+.role-admin .backup-summary-table td:first-child {
+  width: 240px;
+}
+
+@media (max-width: 720px) {
+  .role-admin .card-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .role-admin .grid-2 .btn-primary,
+  .role-admin .grid-2 .btn-danger {
+    width: 100%;
+  }
+
+  .role-admin .backup-summary-wrap {
+    max-height: min(58vh, 420px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    border: none;
+    background: transparent;
+  }
+
+  .role-admin .backup-summary-table,
+  .role-admin .backup-summary-table thead,
+  .role-admin .backup-summary-table tbody,
+  .role-admin .backup-summary-table tr,
+  .role-admin .backup-summary-table th,
+  .role-admin .backup-summary-table td {
+    display: block;
+    width: 100% !important;
+  }
+
+  .role-admin .backup-summary-table thead {
+    display: none;
+  }
+
+  .role-admin .backup-summary-table tbody {
+    display: grid;
+    gap: 12px;
+  }
+
+  .role-admin .backup-summary-table tbody tr {
+    overflow: hidden;
+    border: 1px solid rgba(30, 64, 175, 0.12);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .role-admin .backup-summary-table td {
+    display: grid;
+    grid-template-columns: minmax(96px, 40%) minmax(0, 1fr);
+    gap: 12px;
+    align-items: start;
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(30, 64, 175, 0.08);
+  }
+
+  .role-admin .backup-summary-table td:last-child {
+    border-bottom: none;
+  }
+
+  .role-admin .backup-summary-table td::before {
+    content: attr(data-label);
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+}

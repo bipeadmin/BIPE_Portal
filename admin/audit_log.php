@@ -45,8 +45,8 @@ render_dashboard_layout('Audit Log', 'admin', 'audit_log', 'admin/audit_log.css'
         </form>
 
         <?php if ($rows): ?>
-            <div class="table-wrap">
-                <table>
+            <div class="table-wrap audit-log-wrap">
+                <table class="audit-log-table">
                     <thead>
                     <tr>
                         <th>Timestamp</th>
@@ -59,13 +59,13 @@ render_dashboard_layout('Audit Log', 'admin', 'audit_log', 'admin/audit_log.css'
                     </thead>
                     <tbody>
                     <?php foreach ($rows as $row): ?>
-                        <tr>
-                            <td><?= e((string) $row['created_at']) ?></td>
-                            <td><span class="badge <?= $row['role_name'] === 'admin' ? 'danger' : ($row['role_name'] === 'teacher' ? 'info' : 'warning') ?>"><?= e($row['role_name']) ?></span></td>
-                            <td class="mono"><?= e($row['user_identifier']) ?></td>
-                            <td class="mono"><?= e((string) ($row['ip_address'] ?? '-')) ?></td>
-                            <td><?= e($row['action_code']) ?></td>
-                            <td><?= e((string) ($row['details'] ?? '-')) ?></td>
+                        <tr class="audit-log-row">
+                            <td data-label="Timestamp"><?= e((string) $row['created_at']) ?></td>
+                            <td data-label="Role"><span class="badge <?= $row['role_name'] === 'admin' ? 'danger' : ($row['role_name'] === 'teacher' ? 'info' : 'warning') ?>"><?= e($row['role_name']) ?></span></td>
+                            <td class="mono" data-label="User"><?= e($row['user_identifier']) ?></td>
+                            <td class="mono" data-label="IP Address"><?= e((string) ($row['ip_address'] ?? '-')) ?></td>
+                            <td data-label="Action"><?= e($row['action_code']) ?></td>
+                            <td class="audit-details-cell" data-label="Details"><?= e((string) ($row['details'] ?? '-')) ?></td>
                         </tr>
                     <?php endforeach; ?>
                     </tbody>
@@ -77,3 +77,4 @@ render_dashboard_layout('Audit Log', 'admin', 'audit_log', 'admin/audit_log.css'
     </article>
     <?php
 });
+

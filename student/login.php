@@ -42,7 +42,6 @@ render_auth_layout('Student Login', 'Students can access personal attendance, ma
         <div class="form-actions">
             <button class="btn-primary" type="submit">Login</button>
             <a class="btn-secondary" href="<?= e(url('student/register.php')) ?>">Student Registration</a>
-            <a class="btn-secondary" href="<?= e(url('student/forgot.php')) ?>">Forgot Password</a>
         </div>
     </form>
     <?php

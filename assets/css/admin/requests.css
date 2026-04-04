@@ -1,0 +1,184 @@
+.role-admin .request-admin-page,
+.role-admin .request-section-card,
+.role-admin .request-table-wrap {
+  min-width: 0;
+}
+
+.role-admin .request-admin-page {
+  display: grid;
+  gap: 16px;
+}
+
+.role-admin .request-approval-note {
+  margin: 0;
+}
+
+.role-admin .request-section-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.role-admin .request-table-wrap {
+  max-height: clamp(360px, 60vh, 780px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable both-edges;
+}
+
+.role-admin .request-table {
+  width: 100%;
+  min-width: 1120px;
+  table-layout: auto;
+}
+
+.role-admin .request-table td {
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+.role-admin .request-type-stack,
+.role-admin .request-meta-stack,
+.role-admin .request-detail-stack,
+.role-admin .request-review-stack {
+  display: grid;
+  gap: 4px;
+}
+
+.role-admin .request-category-note {
+  font-size: 12px;
+}
+
+.role-admin .request-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.role-admin .request-actions form {
+  display: flex;
+}
+
+.role-admin .request-actions .btn-primary,
+.role-admin .request-actions .btn-danger {
+  min-width: 106px;
+}
+
+.role-admin .request-review-compact {
+  min-width: 0;
+}
+
+.role-admin .request-table td:nth-child(1) {
+  min-width: 170px;
+}
+
+.role-admin .request-table td:nth-child(2) {
+  min-width: 220px;
+}
+
+.role-admin .request-table td:nth-child(3) {
+  min-width: 170px;
+}
+
+.role-admin .request-table td:nth-child(4) {
+  min-width: 280px;
+}
+
+.role-admin .request-table td:nth-child(5) {
+  min-width: 150px;
+}
+
+.role-admin .request-table td:nth-child(6) {
+  min-width: 190px;
+}
+
+@media (max-width: 720px) {
+  .role-admin .request-section-card .card-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .role-admin .request-section-card .badge {
+    align-self: flex-start;
+  }
+
+  .role-admin .request-table-wrap {
+    max-height: min(70vh, 640px);
+    overflow-x: hidden;
+    overflow-y: auto;
+    border: none;
+    background: transparent;
+  }
+
+  .role-admin .request-table,
+  .role-admin .request-table thead,
+  .role-admin .request-table tbody,
+  .role-admin .request-table tr,
+  .role-admin .request-table th,
+  .role-admin .request-table td {
+    display: block;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .role-admin .request-table {
+    min-width: 0;
+    background: transparent;
+  }
+
+  .role-admin .request-table thead {
+    display: none;
+  }
+
+  .role-admin .request-table tbody {
+    display: grid;
+    gap: 14px;
+  }
+
+  .role-admin .request-table tbody tr {
+    overflow: hidden;
+    border: 1px solid rgba(30, 64, 175, 0.12);
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .role-admin .request-table td {
+    display: grid;
+    grid-template-columns: minmax(110px, 42%) minmax(0, 1fr);
+    gap: 12px;
+    align-items: start;
+    padding: 11px 14px;
+    border-bottom: 1px solid rgba(30, 64, 175, 0.08);
+  }
+
+  .role-admin .request-table td:last-child {
+    border-bottom: none;
+  }
+
+  .role-admin .request-table td::before {
+    content: attr(data-label);
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .role-admin .request-table td[data-label='Action'] {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .role-admin .request-actions {
+    display: grid;
+    gap: 8px;
+  }
+
+  .role-admin .request-actions form,
+  .role-admin .request-actions .btn-primary,
+  .role-admin .request-actions .btn-danger {
+    width: 100%;
+  }
+}

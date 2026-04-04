@@ -8,6 +8,7 @@ DROP TABLE IF EXISTS attendance_sessions;
 DROP TABLE IF EXISTS holiday_events;
 DROP TABLE IF EXISTS password_reset_otps;
 DROP TABLE IF EXISTS admin_otp_requests;
+DROP TABLE IF EXISTS support_requests;
 DROP TABLE IF EXISTS mark_locks;
 DROP TABLE IF EXISTS mark_types;
 DROP TABLE IF EXISTS audit_logs;
@@ -139,6 +140,29 @@ CREATE TABLE password_reset_otps (
     INDEX idx_password_reset_lookup (role_name, email, otp_code, consumed_at, expires_at)
 ) ENGINE=InnoDB;
 
+CREATE TABLE support_requests (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    category ENUM('request', 'feedback', 'issue') NOT NULL DEFAULT 'request',
+    request_type VARCHAR(80) DEFAULT NULL,
+    requester_role ENUM('teacher', 'student', 'admin', 'guest') NOT NULL DEFAULT 'teacher',
+    requester_id INT UNSIGNED DEFAULT NULL,
+    requester_name VARCHAR(190) DEFAULT NULL,
+    requester_identifier VARCHAR(80) DEFAULT NULL,
+    requester_email VARCHAR(190) DEFAULT NULL,
+    subject_line VARCHAR(190) DEFAULT NULL,
+    message_body TEXT DEFAULT NULL,
+    requested_password_hash VARCHAR(255) DEFAULT NULL,
+    status ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
+    reviewed_by_admin_id INT UNSIGNED DEFAULT NULL,
+    reviewed_at DATETIME DEFAULT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_support_requests_category_status (category, status),
+    INDEX idx_support_requests_requester (requester_role, requester_identifier),
+    INDEX idx_support_requests_created_at (created_at),
+    CONSTRAINT fk_support_requests_admin FOREIGN KEY (reviewed_by_admin_id) REFERENCES admins(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
 CREATE TABLE holiday_events (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     academic_year_id INT UNSIGNED NOT NULL,
@@ -263,6 +287,8 @@ CREATE TABLE audit_logs (
     INDEX idx_audit_ip_time (ip_address, created_at),
     INDEX idx_audit_action_time (action_code, created_at)
 ) ENGINE=InnoDB;
+
+
 
 
 
