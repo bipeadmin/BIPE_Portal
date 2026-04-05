@@ -3,23 +3,73 @@
   min-width: 0;
 }
 
+.role-teacher .student-directory-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
 .role-teacher .student-directory-wrap {
   max-height: clamp(380px, 64vh, 760px);
   overflow: auto;
   overscroll-behavior: contain;
-  scrollbar-gutter: stable;
+  scrollbar-gutter: stable both-edges;
+}
+
+.role-teacher .student-directory-wrap thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: rgba(241, 245, 249, 0.96);
+  backdrop-filter: blur(10px);
 }
 
 .role-teacher .student-directory-table {
   width: 100%;
-  min-width: 980px;
+  min-width: 0;
   table-layout: auto;
 }
-
 
 .role-teacher .student-directory-table td {
   overflow-wrap: anywhere;
   vertical-align: top;
+}
+
+.role-teacher .student-directory-summary {
+  display: grid;
+  gap: 8px;
+}
+
+.role-teacher .student-directory-summary strong {
+  font-size: 16px;
+  line-height: 1.35;
+}
+
+.role-teacher .student-directory-mobile-meta {
+  display: none;
+}
+
+.role-teacher .student-directory-mobile-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(30, 64, 175, 0.12);
+  background: rgba(239, 246, 255, 0.9);
+  color: var(--text);
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.role-teacher .student-directory-contact-cell,
+.role-teacher .student-directory-enrollment-cell {
+  word-break: break-word;
+}
+
+.role-teacher .student-directory-account-cell .badge {
+  justify-self: start;
 }
 
 @media (max-width: 720px) {
@@ -63,7 +113,7 @@
     display: grid;
     grid-template-columns: minmax(110px, 42%) minmax(0, 1fr);
     gap: 12px;
-    align-items: center;
+    align-items: start;
     padding: 10px 14px;
     border-bottom: 1px solid rgba(30, 64, 175, 0.08);
     text-align: left;
@@ -85,7 +135,28 @@
   .role-teacher .student-name-cell {
     grid-template-columns: 1fr;
     gap: 10px;
+    align-items: start;
+  }
+
+  .role-teacher .student-directory-mobile-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .role-teacher .student-directory-table td[data-label='Department'],
+  .role-teacher .student-directory-table td[data-label='Year'],
+  .role-teacher .student-directory-table td[data-label='Semester'] {
+    display: none;
+  }
+
+  .role-teacher .student-directory-contact-cell,
+  .role-teacher .student-directory-account-cell {
+    align-items: start;
+  }
+
+  .role-teacher .student-directory-wrap thead th {
+    position: static;
+    backdrop-filter: none;
   }
 }
-
-

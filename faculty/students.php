@@ -26,7 +26,6 @@ render_dashboard_layout('Student Directory', 'teacher', 'students', 'faculty/stu
             <div>
                 <p class="eyebrow">Student Directory</p>
                 <h3 class="card-title">View-only access to all student records</h3>
-
             </div>
         </div>
         <form method="get" class="filters student-directory-filters">
@@ -80,21 +79,27 @@ render_dashboard_layout('Student Directory', 'teacher', 'students', 'faculty/stu
                     </tr>
                     </thead>
                     <tbody>
-                    <?php foreach ($students as $student):
-
-                        ?>
+                    <?php foreach ($students as $student): ?>
+                        <?php $accountRegistered = !empty($student['password_hash']); ?>
                         <tr>
-                            <td class="mono" data-label="Enrollment"><?= e($student['enrollment_no']) ?></td>
+                            <td class="mono student-directory-enrollment-cell" data-label="Enrollment"><?= e($student['enrollment_no']) ?></td>
                             <td class="student-name-cell" data-label="Student">
-                                <strong><?= e($student['full_name']) ?></strong>
+                                <div class="student-directory-summary">
+                                    <strong><?= e($student['full_name']) ?></strong>
+                                    <div class="student-directory-mobile-meta">
+                                        <span class="student-directory-mobile-pill"><?= e($student['department_name']) ?></span>
+                                        <span class="student-directory-mobile-pill"><?= e(year_label((int) $student['year_level'])) ?></span>
+                                        <span class="student-directory-mobile-pill"><?= e(semester_label((int) $student['semester_no'])) ?></span>
+                                    </div>
+                                </div>
                             </td>
                             <td data-label="Department"><?= e($student['department_name']) ?></td>
                             <td data-label="Year"><?= e(year_label((int) $student['year_level'])) ?></td>
                             <td data-label="Semester"><?= e(semester_label((int) $student['semester_no'])) ?></td>
-                            <td data-label="Email"><?= e((string) ($student['email'] ?: '-')) ?></td>
-                            <td data-label="Mobile"><?= e((string) ($student['phone_number'] ?: '-')) ?></td>
-                            <td data-label="Account">
-                                <?php if (!empty($student['password_hash'])): ?>
+                            <td class="student-directory-contact-cell" data-label="Email"><?= e((string) ($student['email'] ?: '-')) ?></td>
+                            <td class="student-directory-contact-cell" data-label="Mobile"><?= e((string) ($student['phone_number'] ?: '-')) ?></td>
+                            <td class="student-directory-account-cell" data-label="Account">
+                                <?php if ($accountRegistered): ?>
                                     <span class="badge success">Registered</span>
                                 <?php else: ?>
                                     <span class="badge warning">Pending activation</span>
@@ -111,4 +116,3 @@ render_dashboard_layout('Student Directory', 'teacher', 'students', 'faculty/stu
     </article>
     <?php
 });
-

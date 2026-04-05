@@ -72,15 +72,15 @@ $holidays = holiday_rows($departmentId);
 
 render_dashboard_layout('Attendance Records', 'teacher', 'records', 'faculty/records.css', 'faculty/records.js', function () use ($departments, $selectedDepartment, $departmentId, $departmentQueryValue, $allDepartmentsMode, $yearLevel, $semesterNo, $attendanceDate, $students, $existing, $existingMap, $history, $holidays): void {
     ?>
-    <section class="grid-2">
-        <article class="data-card">
-            <div class="card-head">
+    <section class="grid-2 faculty-records-grid">
+        <article class="data-card faculty-records-card faculty-records-edit-card">
+            <div class="card-head faculty-records-head">
                 <div>
                     <p class="eyebrow">Edit Attendance</p>
                     <h3 class="card-title">Update a saved class record</h3>
                 </div>
             </div>
-            <form method="get" class="filters" style="margin-bottom:14px">
+            <form method="get" class="filters faculty-records-filters" style="margin-bottom:14px">
                 <div class="form-group">
                     <label class="form-label" for="records-department">Department</label>
                     <select class="form-select" id="records-department" name="department_id">
@@ -114,14 +114,15 @@ render_dashboard_layout('Attendance Records', 'teacher', 'records', 'faculty/rec
             </form>
 
             <?php if ($existing && $students): ?>
-                <form method="post" class="stack">
+                <form method="post" class="stack faculty-records-save-form">
+                    <?= csrf_field() ?>
                     <input type="hidden" name="action" value="save_attendance">
                     <input type="hidden" name="department_id" value="<?= e($departmentQueryValue) ?>">
                     <input type="hidden" name="year_level" value="<?= e((string) $yearLevel) ?>">
                     <input type="hidden" name="semester_no" value="<?= e((string) $semesterNo) ?>">
                     <input type="hidden" name="attendance_date" value="<?= e($attendanceDate) ?>">
-                    <div class="table-wrap">
-                        <table>
+                    <div class="table-wrap faculty-records-table-wrap faculty-records-edit-wrap">
+                        <table class="faculty-records-table faculty-records-edit-table">
                             <thead>
                             <tr>
                                 <?php if ($allDepartmentsMode): ?><th>Department</th><?php endif; ?>
@@ -133,10 +134,10 @@ render_dashboard_layout('Attendance Records', 'teacher', 'records', 'faculty/rec
                             <tbody>
                             <?php foreach ($students as $student): ?>
                                 <tr>
-                                    <?php if ($allDepartmentsMode): ?><td><?= e($student['department_name'] ?? '-') ?></td><?php endif; ?>
-                                    <td class="mono"><?= e($student['enrollment_no']) ?></td>
-                                    <td><?= e($student['full_name']) ?></td>
-                                    <td>
+                                    <?php if ($allDepartmentsMode): ?><td data-label="Department"><?= e($student['department_name'] ?? '-') ?></td><?php endif; ?>
+                                    <td class="mono" data-label="Enrollment"><?= e($student['enrollment_no']) ?></td>
+                                    <td data-label="Student Name"><?= e($student['full_name']) ?></td>
+                                    <td class="faculty-records-status-cell" data-label="Status">
                                         <select class="form-select" name="status[<?= e((string) $student['id']) ?>]">
                                             <option value="P" <?= ($existingMap[(int) $student['id']] ?? 'P') === 'P' ? 'selected' : '' ?>>Present</option>
                                             <option value="A" <?= ($existingMap[(int) $student['id']] ?? 'P') === 'A' ? 'selected' : '' ?>>Absent</option>
@@ -158,16 +159,16 @@ render_dashboard_layout('Attendance Records', 'teacher', 'records', 'faculty/rec
             <?php endif; ?>
         </article>
 
-        <article class="data-card">
-            <div class="card-head">
+        <article class="data-card faculty-records-card faculty-records-history-card">
+            <div class="card-head faculty-records-head">
                 <div>
                     <p class="eyebrow">History</p>
                     <h3 class="card-title"><?= e($selectedDepartment['name'] ?? 'Department') ?> attendance log</h3>
                 </div>
             </div>
             <?php if ($history): ?>
-                <div class="table-wrap">
-                    <table>
+                <div class="table-wrap faculty-records-table-wrap faculty-records-history-wrap">
+                    <table class="faculty-records-table faculty-records-history-table">
                         <thead>
                         <tr>
                             <?php if ($allDepartmentsMode): ?><th>Department</th><?php endif; ?>
@@ -181,12 +182,12 @@ render_dashboard_layout('Attendance Records', 'teacher', 'records', 'faculty/rec
                         <tbody>
                         <?php foreach ($history as $row): ?>
                             <tr>
-                                <?php if ($allDepartmentsMode): ?><td><?= e($row['department_name'] ?? '-') ?></td><?php endif; ?>
-                                <td><?= e($row['attendance_date']) ?></td>
-                                <td><?= e($row['teacher_name']) ?></td>
-                                <td><?= e((string) $row['present_count']) ?></td>
-                                <td><?= e((string) $row['absent_count']) ?></td>
-                                <td><?= e((string) $row['total_count']) ?></td>
+                                <?php if ($allDepartmentsMode): ?><td data-label="Department"><?= e($row['department_name'] ?? '-') ?></td><?php endif; ?>
+                                <td data-label="Date"><?= e($row['attendance_date']) ?></td>
+                                <td data-label="Teacher"><?= e($row['teacher_name']) ?></td>
+                                <td data-label="Present"><?= e((string) $row['present_count']) ?></td>
+                                <td data-label="Absent"><?= e((string) $row['absent_count']) ?></td>
+                                <td data-label="Total"><?= e((string) $row['total_count']) ?></td>
                             </tr>
                         <?php endforeach; ?>
                         </tbody>
@@ -198,16 +199,16 @@ render_dashboard_layout('Attendance Records', 'teacher', 'records', 'faculty/rec
         </article>
     </section>
 
-    <article class="data-card">
-        <div class="card-head">
+    <article class="data-card faculty-records-card faculty-records-holiday-card">
+        <div class="card-head faculty-records-head">
             <div>
                 <p class="eyebrow">Department Holidays</p>
                 <h3 class="card-title">Holiday and event records affecting the selected filter</h3>
             </div>
         </div>
         <?php if ($holidays): ?>
-            <div class="table-wrap">
-                <table>
+            <div class="table-wrap faculty-records-table-wrap faculty-records-holiday-wrap">
+                <table class="faculty-records-table faculty-records-holiday-table">
                     <thead>
                     <tr>
                         <th>From</th>
@@ -222,14 +223,15 @@ render_dashboard_layout('Attendance Records', 'teacher', 'records', 'faculty/rec
                     <tbody>
                     <?php foreach ($holidays as $holiday): ?>
                         <tr>
-                            <td><?= e($holiday['event_date']) ?></td>
-                            <td><?= e((string) ($holiday['end_date'] ?? '-')) ?></td>
-                            <td><?= e((string) holiday_event_total_days($holiday)) ?></td>
-                            <td><span class="badge warning"><?= e($holiday['event_type']) ?></span></td>
-                            <td><?= e($holiday['title']) ?></td>
-                            <td><?= e($holiday['scope_type'] === 'all' ? 'All departments' : ($holiday['department_name'] ?? '-')) ?></td>
-                            <td>
+                            <td data-label="From"><?= e($holiday['event_date']) ?></td>
+                            <td data-label="To"><?= e((string) ($holiday['end_date'] ?? '-')) ?></td>
+                            <td data-label="Days"><?= e((string) holiday_event_total_days($holiday)) ?></td>
+                            <td data-label="Type"><span class="badge warning"><?= e($holiday['event_type']) ?></span></td>
+                            <td data-label="Title"><?= e($holiday['title']) ?></td>
+                            <td data-label="Scope"><?= e($holiday['scope_type'] === 'all' ? 'All departments' : ($holiday['department_name'] ?? '-')) ?></td>
+                            <td class="faculty-records-action-cell" data-label="Action">
                                 <form method="post">
+                                    <?= csrf_field() ?>
                                     <input type="hidden" name="action" value="delete_holiday">
                                     <input type="hidden" name="holiday_id" value="<?= e((string) $holiday['id']) ?>">
                                     <input type="hidden" name="department_id" value="<?= e($departmentQueryValue) ?>">
