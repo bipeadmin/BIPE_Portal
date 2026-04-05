@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 $rootPath = dirname(__DIR__);
 $envBool = static function (string $key, bool $default = false): bool {
     $value = getenv($key);
@@ -18,7 +16,7 @@ return [
         'env' => getenv('BIPE_V2_APP_ENV') ?: 'production',
         'debug' => $envBool('BIPE_V2_APP_DEBUG', false),
         'base_url' => getenv('BIPE_V2_BASE_URL') ?: '',
-        'timezone' => getenv('BIPE_V2_TIMEZONE') ?: 'Asia/Calcutta',
+        'timezone' => getenv('BIPE_V2_TIMEZONE') ?: 'Asia/Kolkata',
     ],
     'db' => [
         'host' => getenv('BIPE_V2_DB_HOST') ?: '127.0.0.1',
@@ -54,3 +52,4 @@ return [
         'cache' => $rootPath . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'cache',
     ],
 ];
+

@@ -8,7 +8,10 @@ error_reporting(E_ALL);
 ini_set('display_errors', !empty($GLOBALS['bipe_v2_config']['app']['debug']) ? '1' : '0');
 ini_set('log_errors', '1');
 
-date_default_timezone_set($GLOBALS['bipe_v2_config']['app']['timezone'] ?? 'Asia/Calcutta');
+$configuredTimezone = (string) ($GLOBALS['bipe_v2_config']['app']['timezone'] ?? 'Asia/Kolkata');
+if (!@date_default_timezone_set($configuredTimezone)) {
+    date_default_timezone_set('Asia/Kolkata');
+}
 
 $httpsDetected = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
 $secureCookie = $httpsDetected || !empty($GLOBALS['bipe_v2_config']['security']['session_cookie_secure']);
@@ -61,3 +64,4 @@ set_exception_handler(static function (Throwable $exception): void {
 
     render_error_response(500, get_class($exception), $message);
 });
+
