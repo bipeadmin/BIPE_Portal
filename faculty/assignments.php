@@ -171,7 +171,7 @@ render_dashboard_layout('Assignment Tracking', 'teacher', 'assignments', 'facult
                 <div>
                     <p class="eyebrow">Submission Matrix</p>
                     <h3 class="card-title">Track submitted and pending students</h3>
-                    <p class="card-subtitle">Load any department roster, update submission status, and keep one clean tracker per subject.</p>
+
                 </div>
             </div>
             <form method="get" class="filters assignment-filter-form" style="margin-bottom:14px">
@@ -271,7 +271,7 @@ render_dashboard_layout('Assignment Tracking', 'teacher', 'assignments', 'facult
                 <div>
                     <p class="eyebrow">Saved Trackers</p>
                     <h3 class="card-title">Existing assignments for <?= e(semester_label($semesterNo)) ?></h3>
-                    <p class="card-subtitle">Review the saved trackers for the current filter without opening another page.</p>
+
                 </div>
             </div>
             <?php if ($assignmentRows): ?>
@@ -308,3 +308,4 @@ render_dashboard_layout('Assignment Tracking', 'teacher', 'assignments', 'facult
     </section>
     <?php
 });
+

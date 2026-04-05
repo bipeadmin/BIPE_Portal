@@ -26,7 +26,7 @@ render_dashboard_layout('Student Directory', 'teacher', 'students', 'faculty/stu
             <div>
                 <p class="eyebrow">Student Directory</p>
                 <h3 class="card-title">View-only access to all student records</h3>
-                <p class="card-subtitle">Faculty can review student details across every department and filter combination, but cannot edit or delete records from this page.</p>
+
             </div>
         </div>
         <form method="get" class="filters student-directory-filters">
@@ -111,6 +111,4 @@ render_dashboard_layout('Student Directory', 'teacher', 'students', 'faculty/stu
     </article>
     <?php
 });
-
-
 

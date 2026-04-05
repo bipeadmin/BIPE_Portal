@@ -81,7 +81,7 @@ $renderSection = static function (string $eyebrow, string $title, string $subtit
             <div>
                 <p class="eyebrow"><?= e($eyebrow) ?></p>
                 <h3 class="card-title"><?= e($title) ?></h3>
-                <p class="card-subtitle"><?= e($subtitle) ?></p>
+
             </div>
             <span class="badge info"><?= e((string) count($rows)) ?> Record<?= count($rows) === 1 ? '' : 's' ?></span>
         </div>
@@ -204,7 +204,7 @@ render_dashboard_layout('Request Approval / Feedback / Issues', 'admin', 'reques
             </article>
         </section>
 
-        <div class="notice-box request-approval-note">Password reset approvals update the requested faculty password instantly. Faculty ID approvals open the default mail client with a prefilled message so the admin can send the ID quickly.</div>
+
 
         <?php $renderSection(
             'Request Approval',
@@ -235,5 +235,4 @@ render_dashboard_layout('Request Approval / Feedback / Issues', 'admin', 'reques
     </div>
     <?php
 });
-
 

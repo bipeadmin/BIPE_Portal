@@ -21,7 +21,7 @@ render_dashboard_layout('Faculty Dashboard', 'teacher', 'dashboard', 'faculty/da
 
     <section class="grid-2 faculty-dashboard-grid">
         <article class="data-card faculty-dashboard-card">
-            <div class="card-head"><div><p class="eyebrow">Quick Links</p><h3 class="card-title">Common faculty tasks</h3><p class="card-subtitle">Everything important stays one tap away on mobile and desktop.</p></div></div>
+            <div class="card-head"><div><p class="eyebrow">Quick Links</p><h3 class="card-title">Common faculty tasks</h3></div></div>
             <div class="data-list faculty-dashboard-links">
                 <a class="data-list-item" href="<?= e(url('faculty/attendance.php')) ?>"><strong>Mark attendance</strong><p class="muted">Create or update the daily attendance sheet.</p></a>
                 <a class="data-list-item" href="<?= e(url('faculty/students.php')) ?>"><strong>Browse students</strong><p class="muted">View student details across all departments with filters.</p></a>
@@ -104,3 +104,4 @@ render_dashboard_layout('Faculty Dashboard', 'teacher', 'dashboard', 'faculty/da
     </section>
     <?php
 });
+

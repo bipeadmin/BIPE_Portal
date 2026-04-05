@@ -137,6 +137,31 @@ function delete_student_record(int $studentId): void
     execute_sql('DELETE FROM students WHERE id = :id', ['id' => $studentId]);
 }
 
+function delete_student_records(array $studentIds): int
+{
+    $studentIds = array_values(array_unique(array_filter(array_map(
+        static fn (mixed $value): int => (int) $value,
+        $studentIds
+    ), static fn (int $value): bool => $value > 0)));
+
+    if ($studentIds === []) {
+        return 0;
+    }
+
+    db()->beginTransaction();
+    try {
+        foreach ($studentIds as $studentId) {
+            execute_sql('DELETE FROM students WHERE id = :id', ['id' => $studentId]);
+        }
+        db()->commit();
+    } catch (Throwable $exception) {
+        db()->rollBack();
+        throw $exception;
+    }
+
+    return count($studentIds);
+}
+
 function update_teacher_account(int $teacherId, string $fullName, string $email, int $departmentId, ?string $password = null): void
 {
     $teacher = query_one('SELECT * FROM teachers WHERE id = :id LIMIT 1', ['id' => $teacherId]);
@@ -900,4 +925,5 @@ function request_password_reset_delivery(string $role, string $email): ?array
 {
     return null;
 }
+
 

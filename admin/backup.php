@@ -49,7 +49,7 @@ render_dashboard_layout('Backup & Restore', 'admin', 'backup', 'admin/backup.css
                 </div>
             </div>
             <div class="stack">
-                <div class="notice-box">Use this before major resets or academic-year transitions. The exported file includes portal settings, users, marks, attendance, assignments, and audit logs.</div>
+
                 <form method="post">
                     <input type="hidden" name="action" value="download_backup">
                     <button class="btn-primary" type="submit">Download Backup</button>
@@ -75,7 +75,7 @@ render_dashboard_layout('Backup & Restore', 'admin', 'backup', 'admin/backup.css
                     <label class="form-label" for="confirm-restore">Type RESTORE to continue</label>
                     <input class="form-input mono" id="confirm-restore" name="confirm_phrase" placeholder="RESTORE" required>
                 </div>
-                <div class="notice-box danger">Restoring a backup overwrites current students, faculty, marks, attendance, assignments, OTP records, and audit data.</div>
+
                 <button class="btn-danger" type="submit" data-confirm="Restore this backup and replace the current portal data?">Restore Backup</button>
             </form>
         </article>

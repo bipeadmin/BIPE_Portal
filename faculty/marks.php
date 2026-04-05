@@ -243,7 +243,7 @@ $isLocked = $sheetDepartmentId > 0 ? mark_section_locked($sheetDepartmentId, $se
 $lockMessage = $allDepartmentsMode
     ? 'This semester is locked by the administrator for the selected subject department. You can review marks, but you cannot modify uploads until the section is unlocked.'
     : 'This semester is locked by the administrator for the selected department. You can review marks, but you cannot modify uploads until the section is unlocked.';
-$csvNotice = 'Download the filtered template to get Enrollment No and Student Name prefilled for the current sheet. Fill Marks, use True for absent or False for present, and any CSV marks above the selected maximum will be saved as 0.';
+
 $emptyStateMessage = $allDepartmentsMode
     ? 'Choose a subject to open the marks sheet for the selected semester.'
     : 'Choose a department and subject to open the marks sheet for this semester.';
@@ -253,11 +253,9 @@ $csvIssueCount = count($csvRestrictionIssues);
 $csvIssuesSummary = 'These rows crossed the selected maximum of ' . $selectedMaxMarks . '. They were saved as 0. Update them in manual entry to clear this list.';
 $csvIssuesResolvedMessage = 'All CSV restriction issues are resolved in manual entry.';
 $uploadReportCount = count($uploads);
-$uploadReportSubtitle = $allDepartmentsMode
-    ? 'Saved mark sheets across all departments for ' . semester_label($semesterNo) . '.'
-    : 'Saved mark sheets for the selected department in ' . semester_label($semesterNo) . '.';
 
-render_dashboard_layout('Upload Marks', 'teacher', 'marks', 'faculty/marks.css', 'faculty/marks.js', function () use ($departments, $selectedDepartmentId, $departmentQueryValue, $allDepartmentsMode, $semesterNo, $subjectId, $markTypeId, $subjectOptions, $markTypes, $students, $existingRecords, $uploads, $isLocked, $selectedMaxMarks, $sheetDepartmentId, $lockMessage, $csvNotice, $emptyStateMessage, $templateDownloadUrl, $templateBaseUrl, $csvRestrictionIssues, $csvIssueCount, $csvIssuesSummary, $csvIssuesResolvedMessage, $uploadReportCount, $uploadReportSubtitle): void {
+
+render_dashboard_layout('Upload Marks', 'teacher', 'marks', 'faculty/marks.css', 'faculty/marks.js', function () use ($departments, $selectedDepartmentId, $departmentQueryValue, $allDepartmentsMode, $semesterNo, $subjectId, $markTypeId, $subjectOptions, $markTypes, $students, $existingRecords, $uploads, $isLocked, $selectedMaxMarks, $sheetDepartmentId, $lockMessage, $emptyStateMessage, $templateDownloadUrl, $templateBaseUrl, $csvRestrictionIssues, $csvIssueCount, $csvIssuesSummary, $csvIssuesResolvedMessage, $uploadReportCount): void {
     ?>
     <?php if ($isLocked): ?>
         <div class="notice-box danger"><?= e($lockMessage) ?></div>
@@ -379,7 +377,7 @@ render_dashboard_layout('Upload Marks', 'teacher', 'marks', 'faculty/marks.css',
                     <input class="form-input" id="marks-file" type="file" name="marks_file" accept=".csv" data-file-input data-file-target="#marks-file-name" required <?= $isLocked ? 'disabled' : '' ?>>
                     <div class="file-hint" id="marks-file-name">No file selected</div>
                 </div>
-                <div class="notice-box"><?= e($csvNotice) ?></div>
+
                 <button class="btn-primary" type="submit" <?= $isLocked ? 'disabled' : '' ?>>Upload CSV</button>
             </form>
 
@@ -428,7 +426,7 @@ render_dashboard_layout('Upload Marks', 'teacher', 'marks', 'faculty/marks.css',
             <div>
                 <p class="eyebrow">Marks Upload Report</p>
                 <h3 class="card-title">Saved mark sheets for <?= e(semester_label($semesterNo)) ?></h3>
-                <p class="card-subtitle"><?= e($uploadReportSubtitle) ?></p>
+
             </div>
             <?php if ($uploads): ?>
                 <span class="marks-upload-report-count"><?= e((string) $uploadReportCount) ?> Upload<?= $uploadReportCount === 1 ? '' : 's' ?></span>

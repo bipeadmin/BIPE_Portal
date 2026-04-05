@@ -1,77 +1,139 @@
-# BIPE Portal V2
+# BIPE Academic Portal
 
-A completely new multi-page PHP and MySQL implementation of the BIPE academic portal.
+A role-based academic management portal built with PHP, MySQL, vanilla JavaScript, and modular page-specific assets. The application is designed to support day-to-day institutional workflows for administrators, faculty members, and students through separate interfaces with shared backend services.
 
-## Standalone guarantee
+## Overview
 
-This root project does not load, include, or execute `BIPE_Portal.html` at runtime.
-The old root files were removed, so this folder is now the standalone portal project.
+The portal centralizes common academic operations such as:
 
-## Project structure
+- student onboarding and profile management
+- faculty approval and faculty account management
+- attendance tracking and attendance review
+- marks upload, marks review, and report generation
+- assignment tracking
+- subject management
+- academic-year administration
+- audit logging
+- backup and restore operations
+- request, feedback, and issue queue handling
 
-- `app/` shared PHP bootstrap, auth, helpers, layout, and actions
-- `config/config.php` central runtime configuration driven by environment variables
-- `database/schema.sql` normalized MySQL schema with OTP, audit log, IP logging, mark lock, and mark type tables
-- `database/seed_core.sql` academic year, admin, departments, subjects, approved demo faculty, and default mark types
-- `database/seed_students.sql` seeded student roster extracted from the legacy BIPE master list
-- `database/migration_add_audit_ip.sql` migration for adding IP logging to an existing audit table
-- `index.php` root homepage entry point
-- `admin/`, `faculty/`, `student/` role-based page folders
-- `assets/css/` common CSS plus page-specific CSS
-- `assets/js/` common JS plus page-specific JS
-- `storage/logs/` application log output
-- `storage/cache/` rate-limit and runtime cache files
+The codebase is organized as a multi-page PHP application with shared bootstrap, authentication, database, helper, and layout layers under `app/`, and role-specific screens under `admin/`, `faculty/`, and `student/`.
 
-## Import order
+## Core Modules
 
-1. Create the database and tables:
-   - import `database/schema.sql`
-2. Import base data:
-   - import `database/seed_core.sql`
-3. Import students:
-   - import `database/seed_students.sql`
+### Administrator
 
-If your database already exists, run:
-- `database/migration_add_audit_ip.sql` to add IP logging to existing audit data
+- Overview dashboard with department-level summaries
+- Student records and registration support
+- Faculty approval, editing, and lifecycle management
+- Request queue for approval, feedback, and issue workflows
+- Attendance review and holiday/event management
+- Marks administration and report card generation
+- Subject import and subject register browsing
+- Audit log monitoring
+- Backup, restore, and settings management
 
-## Default credentials
+### Faculty
 
-Administrator:
-- Username: `bipe`
-- Password: `Bipe@4455`
+- Attendance entry and attendance records
+- Marks entry, CSV upload, and saved marks review
+- Assignment tracking
+- Faculty reports across departments and semesters
+- Student directory access
+- Profile management
+- Recovery request workflow for faculty account support
 
-Seeded approved faculty:
-- Password: `Teach@1234`
-- Example faculty IDs: `rk.cse`, `ak.ce`, `sn.ee`, `mk.pe`, `dk.ae`, `pc.de`
+### Student
 
-Students are seeded as roster records without passwords.
-Each student must activate their own account from `student/register.php`.
+- Account activation from seeded roster data
+- Login and profile access
+- Attendance view
+- Marks view
+- Assignment view
 
-## Production configuration
+## Technology Stack
 
-Use server environment variables for all secrets and runtime settings.
-A starter template is available in `.env.example`.
+- PHP 8+
+- MySQL with PDO
+- Vanilla JavaScript
+- Modular CSS by page and role
+- Session-based authentication
 
-Recommended variables:
+## Project Structure
 
-- `BIPE_V2_APP_ENV=production`
-- `BIPE_V2_APP_DEBUG=false`
-- `BIPE_V2_DB_HOST`
-- `BIPE_V2_DB_PORT`
-- `BIPE_V2_DB_NAME`
-- `BIPE_V2_DB_USER`
-- `BIPE_V2_DB_PASS`
-- `BIPE_V2_SESSION_COOKIE_SECURE=true`
-- `BIPE_V2_CSRF_ENABLED=true`
-- `BIPE_V2_MAIL_ENABLED=true`
-- `BIPE_V2_MAIL_FROM`
-- `BIPE_V2_MAIL_FROM_NAME`
-- `BIPE_V2_SHOW_SEED_HINTS=false`
-- `BIPE_V2_EXPOSE_OTP_IN_FLASH=false`
+- `admin/` administrator pages
+- `faculty/` faculty pages
+- `student/` student pages
+- `app/` shared bootstrap, auth, helpers, layout, and action logic
+- `assets/css/` shared and page-level styles
+- `assets/js/` shared and page-level scripts
+- `assets/images/` static branding assets
+- `assets/uploads/` uploaded profile images
+- `config/config.php` runtime configuration
+- `database/schema.sql` database schema
+- `database/seed_core.sql` base academic and portal seed data
+- `database/seed_students.sql` student roster seed data
+- `storage/logs/` application logs
+- `storage/cache/` runtime cache and rate-limit storage
 
-## Run locally
+## Key Features
 
-Open CMD or PowerShell in the project root and run:
+- Role-based navigation for admin, faculty, and student users
+- Academic-year aware records and reporting
+- Bulk subject import through CSV
+- Marks upload through manual entry and CSV workflows
+- Assignment submission tracking per class and subject
+- Audit log capture for sensitive administrative actions
+- Support request queue with approval states
+- Backup export and restore support
+- Responsive layouts for desktop and mobile use
+
+## Security Highlights
+
+- CSRF protection for POST requests
+- Session timeout handling
+- Secure response headers including CSP and clickjacking protection
+- Rate limiting for sensitive request flows
+- Password strength validation
+- File upload validation for CSV, JSON, and profile images
+- Audit logging for operational visibility
+
+## Getting Started
+
+### Prerequisites
+
+- PHP 8 or newer
+- MySQL or a compatible database server
+- PHP `pdo_mysql` extension enabled
+
+### Database Setup
+
+Import the database files in the following order:
+
+1. `database/schema.sql`
+2. `database/seed_core.sql`
+3. `database/seed_students.sql`
+
+If you are upgrading an older installation, review the SQL files in `database/` and apply only the migrations relevant to your existing schema state.
+
+### Configuration
+
+Runtime configuration is environment-driven. Use environment variables for database connectivity, mail delivery, application mode, upload limits, and security settings.
+
+Common configuration groups include:
+
+- application environment and base URL
+- database host, port, name, user, and password
+- session and CSRF controls
+- upload limits
+- mail sender configuration
+- logging paths
+
+Use `.env.example` as a reference for variable names, but keep real values out of version control and deployment documentation.
+
+### Local Development
+
+Start a local PHP server from the project root:
 
 ```powershell
 php -S localhost:8000
@@ -79,28 +141,36 @@ php -S localhost:8000
 
 Then open:
 
-- `http://localhost:8000/`
+```text
+http://localhost:8000/
+```
 
-## Production hardening now included
+## Deployment Notes
 
-- CSRF protection for POST requests
-- Secure session settings and idle timeout support
-- CSP, no-sniff, frame-deny, referrer, and permissions headers
-- Server-side rate limiting for login and OTP actions
-- Strong password enforcement across registration, reset, and password updates
-- Hidden seed/demo hints by default
-- OTP flash preview disabled by default
-- Safe upload validation for CSV and backup JSON files
-- POST-based logout and backup export
-- Application log file support in `storage/logs/app.log`
-- Audit log entries now store and display user IP addresses in the administrator panel
+- Set all production secrets through environment variables.
+- Disable debug mode in production.
+- Enable secure session cookies when serving over HTTPS.
+- Configure outbound mail before using mail-dependent recovery flows in production.
+- Keep `storage/logs/` and `storage/cache/` writable by the application.
+- Review backup and restore permissions carefully before exposing the portal to live users.
 
-## Mail delivery
+## Data and Privacy Guidance
 
-Password reset in production should be backed by server mail delivery.
-The project uses PHP `mail()` when `BIPE_V2_MAIL_ENABLED=true`.
-If mail delivery is not configured, OTP reset requests are blocked in production instead of exposing OTPs in the UI.
+- Do not store secrets, passwords, or real credentials in documentation.
+- Do not commit production database credentials or mail server credentials.
+- Treat seeded/demo data as non-production initialization data only.
+- Review uploaded files and backup data handling policies before live deployment.
 
-## PHP requirement
+## Maintenance
 
-This project uses PDO MySQL, so `pdo_mysql` must be enabled in PHP.
+Recommended operational checks:
+
+- monitor application logs
+- review audit logs regularly
+- validate backups periodically
+- verify mail delivery configuration
+- review session, rate-limit, and upload settings during deployment updates
+
+## License
+
+Add the appropriate project license statement here if the portal is being distributed outside the institution.

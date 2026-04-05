@@ -43,7 +43,7 @@ if (is_post()) {
 render_auth_layout('Faculty Password Help', 'Raise a faculty access request for password or faculty ID support.', 'faculty/forgot.css', 'faculty/forgot.js', function (): void {
     ?>
     <div class="stack faculty-forgot-shell">
-        <div class="notice-box warning">Submit your faculty recovery request below. The request will wait in the admin approval queue until it is reviewed.</div>
+
         <form method="post" class="form-grid faculty-forgot-form" data-faculty-forgot-form>
             <div class="form-group">
                 <label class="form-label" for="faculty-forgot-id">Faculty ID</label>
@@ -61,7 +61,7 @@ render_auth_layout('Faculty Password Help', 'Raise a faculty access request for 
                 <label class="form-label" for="faculty-new-password">New Password</label>
                 <input class="form-input" id="faculty-new-password" name="new_password" type="password" autocomplete="new-password" placeholder="Enter new password request">
             </div>
-            <div class="notice-box">If you select <strong>Forget Password</strong>, enter the new password you want to request. If you select <strong>Forget Faculty ID</strong>, no extra field is needed.</div>
+
             <div class="form-actions">
                 <button class="btn-primary" type="submit">Submit Request</button>
                 <a class="btn-secondary" href="<?= e(url('faculty/login.php')) ?>">Back to Login</a>
@@ -70,3 +70,4 @@ render_auth_layout('Faculty Password Help', 'Raise a faculty access request for 
     </div>
     <?php
 });
+

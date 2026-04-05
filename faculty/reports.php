@@ -143,7 +143,7 @@ render_dashboard_layout('Faculty Reports', 'teacher', 'reports', 'faculty/report
             <div>
                 <p class="eyebrow">Faculty Activity Report</p>
                 <h3 class="card-title">All records saved by <?= e((string) ($teacher['full_name'] ?? 'the teacher')) ?></h3>
-                <p class="card-subtitle">Review attendance, marks uploads, and assignment trackers created from this faculty account across departments and semesters.</p>
+
             </div>
         </div>
         <form method="get" class="filters faculty-report-filters">
@@ -292,5 +292,4 @@ render_dashboard_layout('Faculty Reports', 'teacher', 'reports', 'faculty/report
     </article>
     <?php
 });
-
 

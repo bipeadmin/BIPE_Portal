@@ -117,7 +117,7 @@ render_dashboard_layout('Subject Management', 'admin', 'subjects', 'admin/subjec
                 <div>
                     <p class="eyebrow">Bulk Upload</p>
                     <h3 class="card-title">Import subjects class-wise</h3>
-                    <p class="card-subtitle">Choose department, year, and semester first. The CSV only needs subject code and subject name.</p>
+
                 </div>
                 <a class="btn-secondary" href="<?= e(url('admin/subjects.php?template=1&department_id=' . $uploadDepartmentId . '&year_level=' . $uploadYearLevel . '&semester_no=' . $uploadSemesterNo)) ?>">Download Template</a>
             </div>
@@ -157,7 +157,7 @@ render_dashboard_layout('Subject Management', 'admin', 'subjects', 'admin/subjec
                             <div class="file-hint" id="subject-file-name">No file selected</div>
                         </div>
                     </div>
-                    <div class="notice-box">Use one CSV per class. Department, year, and semester are taken from the form, so the file only needs <span class="mono">Subject Code</span> and <span class="mono">Subject Name</span> columns.</div>
+
                     <button class="btn-primary" type="submit">Import Subjects</button>
                 </form>
             <?php else: ?>
@@ -170,7 +170,7 @@ render_dashboard_layout('Subject Management', 'admin', 'subjects', 'admin/subjec
                 <div>
                     <p class="eyebrow">Browse Subjects</p>
                     <h3 class="card-title">Filter the stored subject register</h3>
-                    <p class="card-subtitle">Use department, year, semester, and search together to review exactly one class or the whole catalog.</p>
+
                 </div>
             </div>
             <form method="get" class="filters subject-filter-form">
@@ -225,7 +225,7 @@ render_dashboard_layout('Subject Management', 'admin', 'subjects', 'admin/subjec
             <div>
                 <p class="eyebrow">Subject Register</p>
                 <h3 class="card-title">Stored subjects by department and semester</h3>
-                <p class="card-subtitle">This list updates with the selected filters and stays readable on mobile without horizontal scrolling.</p>
+
             </div>
         </div>
         <?php if ($subjectRows): ?>
@@ -269,5 +269,4 @@ render_dashboard_layout('Subject Management', 'admin', 'subjects', 'admin/subjec
     </article>
     <?php
 });
-
 

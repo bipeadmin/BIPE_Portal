@@ -86,18 +86,16 @@ foreach ($students as $student) {
 $totalStudents = count($students);
 $missingCount = max(0, $totalStudents - $recordedCount);
 $selectedDepartmentLabel = $selectedSubject['department_name'] ?? ($departmentMap[$selectedDepartmentId]['name'] ?? ($teacher['department_name'] ?? 'Department'));
-$sheetSubtitle = $upload
-    ? 'Uploaded on ' . (string) $upload['uploaded_at'] . ' with max marks ' . (string) $upload['max_marks'] . '.'
-    : 'No saved marks upload exists yet. The current class roster is shown below for review.';
 
-render_dashboard_layout('View Marks', 'teacher', 'view_marks', 'faculty/view_marks.css', 'faculty/view_marks.js', function () use ($departments, $selectedDepartmentId, $departmentQueryValue, $allDepartmentsMode, $semesterNo, $subjectId, $markTypeId, $subjectOptions, $markTypes, $students, $recordsMap, $upload, $selectedDepartmentLabel, $sheetSubtitle, $totalStudents, $recordedCount, $absentCount, $missingCount): void {
+
+render_dashboard_layout('View Marks', 'teacher', 'view_marks', 'faculty/view_marks.css', 'faculty/view_marks.js', function () use ($departments, $selectedDepartmentId, $departmentQueryValue, $allDepartmentsMode, $semesterNo, $subjectId, $markTypeId, $subjectOptions, $markTypes, $students, $recordsMap, $upload, $selectedDepartmentLabel, $totalStudents, $recordedCount, $absentCount, $missingCount): void {
     ?>
     <article class="data-card view-marks-card">
         <div class="card-head view-marks-head">
             <div>
                 <p class="eyebrow">Marks Viewer</p>
                 <h3 class="card-title">Review saved marks by subject and mark type</h3>
-                <p class="card-subtitle">Open any department roster, check saved marks, and spot missing entries quickly.</p>
+
             </div>
         </div>
         <form method="get" class="filters view-marks-filters" style="margin-bottom:14px">
@@ -143,7 +141,7 @@ render_dashboard_layout('View Marks', 'teacher', 'view_marks', 'faculty/view_mar
         </form>
 
         <?php if ($students): ?>
-            <div class="notice-box view-marks-notice"><?= e($sheetSubtitle) ?></div>
+
             <section class="stats-grid view-marks-summary">
                 <article class="stat-card"><p class="eyebrow">Department</p><h3 class="stat-value view-marks-stat-text"><?= e($selectedDepartmentLabel) ?></h3><p class="stat-label"><?= e(semester_label($semesterNo)) ?> roster</p></article>
                 <article class="stat-card"><p class="eyebrow">Total Students</p><h3 class="stat-value"><?= e((string) $totalStudents) ?></h3><p class="stat-label">Students in the selected class</p></article>
@@ -187,3 +185,4 @@ render_dashboard_layout('View Marks', 'teacher', 'view_marks', 'faculty/view_mar
     </article>
     <?php
 });
+

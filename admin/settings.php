@@ -298,9 +298,7 @@ render_dashboard_layout('Portal Settings', 'admin', 'settings', 'admin/settings.
                 <h3 class="card-title">Reset the portal database</h3>
             </div>
         </div>
-        <div class="notice-box danger" style="margin-bottom:14px">
-            This action removes students, faculty accounts, OTP requests, attendance, marks, assignments, holiday records, and audit logs. Administrators, departments, subjects, mark types, and academic years are kept.
-        </div>
+
         <form method="post" class="form-grid">
             <input type="hidden" name="action" value="reset_portal">
             <div class="form-group">
@@ -312,6 +310,4 @@ render_dashboard_layout('Portal Settings', 'admin', 'settings', 'admin/settings.
     </article>
     <?php
 });
-
-
 

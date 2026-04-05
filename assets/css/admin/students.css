@@ -47,6 +47,15 @@
   width: 100%;
 }
 
+.role-admin .student-directory-tools {
+  justify-content: space-between;
+  margin: 14px 0 16px;
+}
+
+.role-admin .student-directory-tools form {
+  margin: 0;
+}
+
 @media (max-width: 720px) {
   .role-admin .student-directory-wrap {
     max-height: min(68vh, 620px);
@@ -120,4 +129,5 @@
     backdrop-filter: none;
   }
 }
+
 
