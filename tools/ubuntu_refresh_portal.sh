@@ -34,6 +34,12 @@ else
   log 'No .git directory found, skipping git pull.'
 fi
 
+if [[ ! -f .env && -f .env.example ]]; then
+  log 'Creating .env from .env.example...'
+  cp .env.example .env
+  log 'Review .env and update database values if needed.'
+fi
+
 log 'Removing UTF-8 BOM from PHP files if present...'
 while IFS= read -r -d '' file; do
   perl -i -pe 's/^\x{FEFF}//' "$file"
@@ -51,7 +57,7 @@ find storage assets/uploads -type d -exec chmod 775 {} +
 find storage assets/uploads -type f -exec chmod 664 {} +
 
 log 'Running PHP syntax checks...'
-for file in config/config.php app/bootstrap.php faculty/records.php faculty/students.php; do
+for file in config/config.php app/bootstrap.php faculty/records.php faculty/students.php change-password.php; do
   "$PHP_BIN" -l "$file"
 done
 
@@ -59,7 +65,10 @@ log 'Restarting Apache...'
 systemctl restart "$APACHE_SERVICE"
 
 log 'Checking local HTTP response...'
-curl -I http://127.0.0.1/ || true
+if ! curl -I http://127.0.0.1/; then
+  log 'Local HTTP check failed. Showing recent Apache errors:'
+  tail -n 40 /var/log/apache2/error.log || true
+fi
 
 PRIMARY_IP="$(hostname -I | awk '{print $1}')"
 if [[ -n "$PRIMARY_IP" ]]; then
