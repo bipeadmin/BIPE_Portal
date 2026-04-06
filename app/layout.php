@@ -183,11 +183,3 @@ function render_auth_layout(string $title, string $subtitle, string $pageCss, st
     render_foot($pageJs);
 }
 
-
-
-
-
-
-
-
-
