@@ -14,7 +14,7 @@ if (!@date_default_timezone_set($configuredTimezone)) {
 }
 
 $httpsDetected = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
-$secureCookie = $httpsDetected || !empty($GLOBALS['bipe_v2_config']['security']['session_cookie_secure']);
+$secureCookie = $httpsDetected && !empty($GLOBALS['bipe_v2_config']['security']['session_cookie_secure']);
 $sessionTimeout = (int) ($GLOBALS['bipe_v2_config']['security']['session_idle_timeout'] ?? 7200);
 
 if (session_status() !== PHP_SESSION_ACTIVE) {
@@ -65,3 +65,5 @@ enforce_session_timeout();
 if (is_post() && (bool) config('security.csrf_enabled', true)) {
     verify_csrf_request();
 }
+
+
