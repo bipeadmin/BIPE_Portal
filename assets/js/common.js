@@ -141,6 +141,38 @@
     });
   });
 
+  document.querySelectorAll('.table-wrap table').forEach((table) => {
+    const headerRows = table.querySelectorAll('thead tr');
+    const headerRow = headerRows.length > 0 ? headerRows[headerRows.length - 1] : null;
+    const bodyRows = table.querySelectorAll('tbody tr');
+    if (!headerRow || bodyRows.length === 0) {
+      return;
+    }
+
+    const headers = Array.from(headerRow.children)
+      .filter((cell) => cell.matches('th, td'))
+      .map((cell) => cell.textContent.replace(/\s+/g, ' ').trim());
+
+    let labelledCells = 0;
+    bodyRows.forEach((row) => {
+      Array.from(row.children)
+        .filter((cell) => cell.matches('th, td'))
+        .forEach((cell, index) => {
+          if (!cell.getAttribute('data-label') && headers[index]) {
+            cell.setAttribute('data-label', headers[index]);
+          }
+
+          if (cell.getAttribute('data-label')) {
+            labelledCells++;
+          }
+        });
+    });
+
+    if (labelledCells > 0) {
+      table.setAttribute('data-stack-mobile', 'true');
+    }
+  });
+
   const flashes = document.querySelectorAll('.flash');
   if (flashes.length > 0) {
     window.setTimeout(() => {

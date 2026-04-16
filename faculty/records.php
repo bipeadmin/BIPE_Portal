@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 require_once __DIR__ . '/../app/bootstrap.php';
@@ -36,16 +37,6 @@ if (is_post()) {
     $action = (string) post('action');
 
     try {
-        if ($action === 'save_attendance') {
-            $statuses = [];
-            foreach ((array) post('status', []) as $studentId => $status) {
-                $statuses[(int) $studentId] = $status === 'P' ? 'P' : 'A';
-            }
-            upsert_attendance_scope((int) $teacher['id'], $departmentId, $yearLevel, $semesterNo, $attendanceDate, $statuses, trim((string) post('remarks')) ?: null);
-            audit_log('teacher', (string) ($teacher['teacher_code'] ?? ('teacher#' . $teacher['id'])), 'ATTENDANCE_UPDATED', 'Updated attendance for ' . ($selectedDepartment['name'] ?? 'selected scope') . ', semester ' . $semesterNo . ' on ' . $attendanceDate);
-            flash('success', 'Attendance record updated successfully.');
-        }
-
         if ($action === 'delete_holiday') {
             delete_holiday_event((int) post('holiday_id'));
             audit_log('teacher', (string) ($teacher['teacher_code'] ?? ('teacher#' . $teacher['id'])), 'HOLIDAY_DELETED', 'Deleted holiday record #' . (string) post('holiday_id'));
@@ -76,8 +67,8 @@ render_dashboard_layout('Attendance Records', 'teacher', 'records', 'faculty/rec
         <article class="data-card faculty-records-card faculty-records-edit-card">
             <div class="card-head faculty-records-head">
                 <div>
-                    <p class="eyebrow">Edit Attendance</p>
-                    <h3 class="card-title">Update a saved class record</h3>
+                    <p class="eyebrow">Saved Attendance</p>
+                    <h3 class="card-title">Review a saved class record</h3>
                 </div>
             </div>
             <form method="get" class="filters faculty-records-filters" style="margin-bottom:14px">
@@ -114,46 +105,31 @@ render_dashboard_layout('Attendance Records', 'teacher', 'records', 'faculty/rec
             </form>
 
             <?php if ($existing && $students): ?>
-                <form method="post" class="stack faculty-records-save-form">
-                    <?= csrf_field() ?>
-                    <input type="hidden" name="action" value="save_attendance">
-                    <input type="hidden" name="department_id" value="<?= e($departmentQueryValue) ?>">
-                    <input type="hidden" name="year_level" value="<?= e((string) $yearLevel) ?>">
-                    <input type="hidden" name="semester_no" value="<?= e((string) $semesterNo) ?>">
-                    <input type="hidden" name="attendance_date" value="<?= e($attendanceDate) ?>">
-                    <div class="table-wrap faculty-records-table-wrap faculty-records-edit-wrap">
-                        <table class="faculty-records-table faculty-records-edit-table">
-                            <thead>
+                <div class="notice-box">Attendance records are locked after the first save. This section is view-only.</div>
+                <div class="table-wrap faculty-records-table-wrap faculty-records-edit-wrap">
+                    <table class="faculty-records-table faculty-records-edit-table">
+                        <thead>
+                        <tr>
+                            <?php if ($allDepartmentsMode): ?><th>Department</th><?php endif; ?>
+                            <th>Enrollment</th>
+                            <th>Student Name</th>
+                            <th>Status</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <?php foreach ($students as $student): ?>
+                            <?php $status = ($existingMap[(int) $student['id']] ?? 'P') === 'P' ? 'Present' : 'Absent'; ?>
                             <tr>
-                                <?php if ($allDepartmentsMode): ?><th>Department</th><?php endif; ?>
-                                <th>Enrollment</th>
-                                <th>Student Name</th>
-                                <th>Status</th>
+                                <?php if ($allDepartmentsMode): ?><td data-label="Department"><?= e($student['department_name'] ?? '-') ?></td><?php endif; ?>
+                                <td class="mono" data-label="Enrollment"><?= e($student['enrollment_no']) ?></td>
+                                <td data-label="Student Name"><?= e($student['full_name']) ?></td>
+                                <td class="faculty-records-status-cell" data-label="Status"><span class="badge <?= $status === 'Present' ? 'success' : 'danger' ?>"><?= e($status) ?></span></td>
                             </tr>
-                            </thead>
-                            <tbody>
-                            <?php foreach ($students as $student): ?>
-                                <tr>
-                                    <?php if ($allDepartmentsMode): ?><td data-label="Department"><?= e($student['department_name'] ?? '-') ?></td><?php endif; ?>
-                                    <td class="mono" data-label="Enrollment"><?= e($student['enrollment_no']) ?></td>
-                                    <td data-label="Student Name"><?= e($student['full_name']) ?></td>
-                                    <td class="faculty-records-status-cell" data-label="Status">
-                                        <select class="form-select" name="status[<?= e((string) $student['id']) ?>]">
-                                            <option value="P" <?= ($existingMap[(int) $student['id']] ?? 'P') === 'P' ? 'selected' : '' ?>>Present</option>
-                                            <option value="A" <?= ($existingMap[(int) $student['id']] ?? 'P') === 'A' ? 'selected' : '' ?>>Absent</option>
-                                        </select>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label" for="records-remarks">Remarks</label>
-                        <textarea class="form-textarea" id="records-remarks" name="remarks"><?= e((string) ($existing['remarks'] ?? '')) ?></textarea>
-                    </div>
-                    <button class="btn-primary" type="submit">Update Attendance</button>
-                </form>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="notice-box faculty-records-readonly-note"><?= e((string) ($existing['remarks'] ?? 'No remarks were saved for this attendance record.')) ?></div>
             <?php else: ?>
                 <div class="empty-state">No attendance session exists for the selected filter, class, and date.</div>
             <?php endif; ?>

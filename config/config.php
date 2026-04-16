@@ -75,7 +75,7 @@ return [
         'port' => $envValue('BIPE_V2_DB_PORT', '3306'),
         'name' => $envValue('BIPE_V2_DB_NAME', 'bipe_portal_v2'),
         'user' => $envValue('BIPE_V2_DB_USER', 'root'),
-        'pass' => $envValue('BIPE_V2_DB_PASS', ''),
+        'pass' => $envValue('BIPE_V2_DB_PASS', 'M4a1..,.,.,@'),
     ],
     'security' => [
         'show_seed_hints' => $envBool('BIPE_V2_SHOW_SEED_HINTS', false),

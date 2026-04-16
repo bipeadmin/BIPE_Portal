@@ -832,6 +832,229 @@ function class_marks_overview_rows(int $departmentId, int $semesterNo): array
     return $rows;
 }
 
+function mark_records_grouped_by_upload_ids(array $uploadIds): array
+{
+    $normalizedIds = array_values(array_filter(array_map(static fn (mixed $value): int => (int) $value, $uploadIds), static fn (int $value): bool => $value > 0));
+    if ($normalizedIds === []) {
+        return [];
+    }
+
+    $params = [];
+    $placeholders = [];
+    foreach ($normalizedIds as $index => $uploadId) {
+        $key = 'upload_id_' . $index;
+        $placeholders[] = ':' . $key;
+        $params[$key] = $uploadId;
+    }
+
+    $records = query_all(
+        'SELECT * FROM mark_records WHERE mark_upload_id IN (' . implode(', ', $placeholders) . ')',
+        $params
+    );
+
+    $grouped = [];
+    foreach ($records as $record) {
+        $grouped[(int) $record['mark_upload_id']][(int) $record['student_id']] = $record;
+    }
+
+    return $grouped;
+}
+
+function class_mark_type_overview_rows(int $departmentId, int $semesterNo, int $markTypeId): array
+{
+    $markType = mark_type_by_id($markTypeId);
+    if (!$markType) {
+        return [];
+    }
+
+    $students = students_for_class($departmentId, $semesterNo);
+    if ($students === []) {
+        return [];
+    }
+
+    $uploads = query_all(
+        'SELECT mu.id, mu.subject_id, mu.max_marks, s.subject_name
+         FROM mark_uploads mu
+         INNER JOIN subjects s ON s.id = mu.subject_id
+         WHERE mu.academic_year_id = :academic_year_id
+           AND mu.department_id = :department_id
+           AND mu.semester_no = :semester_no
+           AND mu.exam_type = :exam_type
+         ORDER BY s.subject_name ASC',
+        [
+            'academic_year_id' => current_academic_year_id(),
+            'department_id' => $departmentId,
+            'semester_no' => $semesterNo,
+            'exam_type' => (string) $markType['label'],
+        ]
+    );
+
+    if ($uploads === []) {
+        $rows = [];
+        foreach ($students as $student) {
+            $rows[] = [
+                'student' => $student,
+                'marks_total' => 0.0,
+                'marks_max' => 0.0,
+                'grade' => '-',
+                'result' => 'Pending',
+                'recorded_subjects' => 0,
+                'published_subjects' => 0,
+                'attendance' => attendance_summary_for_student((int) $student['id']),
+            ];
+        }
+
+        return $rows;
+    }
+
+    $recordsByUpload = mark_records_grouped_by_upload_ids(array_map(static fn (array $row): int => (int) $row['id'], $uploads));
+    $publishedSubjects = count($uploads);
+    $uploadMaxValues = array_values(array_unique(array_map(
+        static fn (array $upload): float => (float) ($upload['max_marks'] ?? 0),
+        array_values(array_filter($uploads, static fn (array $upload): bool => (float) ($upload['max_marks'] ?? 0) > 0))
+    )));
+    $assessmentMax = count($uploadMaxValues) === 1
+        ? (float) $uploadMaxValues[0]
+        : ((float) ($markType['max_marks'] ?? 0) > 0
+            ? (float) $markType['max_marks']
+            : (float) max($uploadMaxValues ?: [0]));
+    $rows = [];
+
+    foreach ($students as $student) {
+        $marksTotal = 0.0;
+        $recordedSubjects = 0;
+        $scoredSubjects = 0;
+        $absentSubjects = 0;
+
+        foreach ($uploads as $upload) {
+            $record = $recordsByUpload[(int) $upload['id']][(int) $student['id']] ?? null;
+            if (!$record) {
+                continue;
+            }
+
+            $recordedSubjects++;
+            $isAbsent = (int) ($record['is_absent'] ?? 0) === 1;
+            if ($isAbsent) {
+                $absentSubjects++;
+                continue;
+            }
+
+            $scoredSubjects++;
+            $marksTotal += (float) ($record['marks_obtained'] ?? 0);
+        }
+
+        $result = 'Pending';
+        if ($recordedSubjects > 0) {
+            $result = $recordedSubjects === $absentSubjects ? 'Absent' : pass_fail_from_marks(
+                $scoredSubjects > 0 ? ($marksTotal / $scoredSubjects) : 0.0,
+                $assessmentMax
+            );
+        }
+
+        $averageScore = $scoredSubjects > 0 ? round($marksTotal / $scoredSubjects, 2) : 0.0;
+        $rows[] = [
+            'student' => $student,
+            'marks_total' => $averageScore,
+            'marks_max' => $assessmentMax,
+            'grade' => $scoredSubjects > 0 && $assessmentMax > 0 ? grade_from_marks($averageScore, $assessmentMax) : '-',
+            'result' => $result,
+            'recorded_subjects' => $recordedSubjects,
+            'published_subjects' => $publishedSubjects,
+            'scored_subjects' => $scoredSubjects,
+            'absent_subjects' => $absentSubjects,
+            'attendance' => attendance_summary_for_student((int) $student['id']),
+        ];
+    }
+
+    return $rows;
+}
+
+function subject_marks_export_rows(int $departmentId, int $semesterNo, int $subjectId): array
+{
+    $subject = query_one(
+        'SELECT * FROM subjects WHERE id = :id AND department_id = :department_id AND semester_no = :semester_no LIMIT 1',
+        ['id' => $subjectId, 'department_id' => $departmentId, 'semester_no' => $semesterNo]
+    );
+    if (!$subject) {
+        return [];
+    }
+
+    $students = students_for_class($departmentId, $semesterNo);
+    if ($students === []) {
+        return [];
+    }
+
+    $markTypes = mark_type_rows();
+    $uploads = query_all(
+        'SELECT id, exam_type, max_marks
+         FROM mark_uploads
+         WHERE academic_year_id = :academic_year_id
+           AND department_id = :department_id
+           AND semester_no = :semester_no
+           AND subject_id = :subject_id',
+        [
+            'academic_year_id' => current_academic_year_id(),
+            'department_id' => $departmentId,
+            'semester_no' => $semesterNo,
+            'subject_id' => $subjectId,
+        ]
+    );
+
+    $uploadsByExamType = [];
+    foreach ($uploads as $upload) {
+        $uploadsByExamType[(string) $upload['exam_type']] = $upload;
+    }
+
+    $recordsByUpload = mark_records_grouped_by_upload_ids(array_map(static fn (array $row): int => (int) $row['id'], $uploads));
+    $rows = [];
+
+    foreach ($students as $student) {
+        $cells = [];
+        $total = 0.0;
+        $max = 0.0;
+        $recordedCount = 0;
+
+        foreach ($markTypes as $markType) {
+            $label = (string) ($markType['label'] ?? '');
+            $upload = $uploadsByExamType[$label] ?? null;
+            $cellMax = (float) ($upload['max_marks'] ?? ($markType['max_marks'] ?? 0));
+            $max += $cellMax;
+            $display = '--';
+
+            if ($upload) {
+                $record = $recordsByUpload[(int) $upload['id']][(int) $student['id']] ?? null;
+                if ($record) {
+                    $recordedCount++;
+                    if ((int) ($record['is_absent'] ?? 0) === 1) {
+                        $display = 'AB';
+                    } elseif ($record['marks_obtained'] !== null) {
+                        $display = (string) $record['marks_obtained'];
+                        $total += (float) $record['marks_obtained'];
+                    }
+                }
+            }
+
+            $cells[] = [
+                'label' => $label,
+                'max_marks' => $cellMax,
+                'display' => $display,
+            ];
+        }
+
+        $rows[] = [
+            'student' => $student,
+            'cells' => $cells,
+            'total' => $total,
+            'max' => $max,
+            'grade' => $max > 0 ? grade_from_marks($total, $max) : '-',
+            'result' => $recordedCount > 0 ? pass_fail_from_marks($total, $max) : 'Pending',
+            'recorded_count' => $recordedCount,
+            'subject' => $subject,
+        ];
+    }
+
+    return $rows;
+}
 function backup_table_names(): array
 {
     return [
@@ -925,5 +1148,6 @@ function request_password_reset_delivery(string $role, string $email): ?array
 {
     return null;
 }
+
 
 

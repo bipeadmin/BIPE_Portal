@@ -166,3 +166,8 @@
     min-height: 120px;
   }
 }
+
+.role-teacher .faculty-records-readonly-note {
+  margin-top: 12px;
+}
+

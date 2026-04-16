@@ -22,10 +22,15 @@ if (is_post()) {
             audit_log('admin', (string) (current_user()['username'] ?? 'admin'), 'FACULTY_REJECTED', 'Teacher ID ' . $teacherId);
             flash('info', 'Faculty request rejected.');
         }
-        if ($action === 'delete' && $teacherId > 0) {
-            delete_teacher_account($teacherId);
-            audit_log('admin', (string) (current_user()['username'] ?? 'admin'), 'FACULTY_DELETE', 'Teacher ID ' . $teacherId);
-            flash('success', 'Faculty record removed successfully.');
+        if ($action === 'archive' && $teacherId > 0) {
+            archive_teacher_account($teacherId);
+            audit_log('admin', (string) (current_user()['username'] ?? 'admin'), 'FACULTY_ARCHIVED', 'Teacher ID ' . $teacherId);
+            flash('success', 'Faculty profile removed from the active panel. Existing attendance, marks, assignments, and audit history are preserved.');
+        }
+        if ($action === 'restore' && $teacherId > 0) {
+            restore_teacher_account($teacherId);
+            audit_log('admin', (string) (current_user()['username'] ?? 'admin'), 'FACULTY_RESTORED', 'Teacher ID ' . $teacherId);
+            flash('success', 'Faculty account restored to the active panel.');
         }
         if ($action === 'approve_all') {
             $count = approve_all_pending_teachers();
@@ -80,6 +85,11 @@ render_dashboard_layout('Faculty Approval & Records', 'admin', 'faculty', 'admin
             <p class="eyebrow">Rejected</p>
             <h3 class="stat-value"><?= e((string) count($groups['rejected'])) ?></h3>
             <p class="stat-label">Rejected requests kept for audit</p>
+        </article>
+        <article class="stat-card">
+            <p class="eyebrow">Archived</p>
+            <h3 class="stat-value"><?= e((string) count($groups['archived'])) ?></h3>
+            <p class="stat-label">Removed from active use while keeping activity history</p>
         </article>
     </section>
 
@@ -215,9 +225,9 @@ render_dashboard_layout('Faculty Approval & Records', 'admin', 'faculty', 'admin
                                     <div class="actions-cell">
                                         <a class="btn-secondary" href="<?= e(url('admin/faculty.php?edit_id=' . $teacher['id'])) ?>">Edit</a>
                                         <form method="post">
-                                            <input type="hidden" name="action" value="delete">
+                                            <input type="hidden" name="action" value="archive">
                                             <input type="hidden" name="teacher_id" value="<?= e((string) $teacher['id']) ?>">
-                                            <button class="btn-danger" type="submit" data-confirm="Delete this faculty account? Attendance and marks already recorded will stay in the database.">Delete</button>
+                                            <button class="btn-danger" type="submit" data-confirm="Remove this faculty account from the active panel? Attendance, marks, assignments, and audit history will stay available.">Remove</button>
                                         </form>
                                     </div>
                                 </td>
@@ -228,6 +238,53 @@ render_dashboard_layout('Faculty Approval & Records', 'admin', 'faculty', 'admin
                 </div>
             <?php else: ?>
                 <div class="empty-state">No approved faculty accounts yet.</div>
+            <?php endif; ?>
+        </article>
+
+        <article class="data-card">
+            <div class="card-head">
+                <div>
+                    <p class="eyebrow">Archived Faculty</p>
+                    <h3 class="card-title">Removed from active use, history preserved</h3>
+                </div>
+            </div>
+            <?php if ($groups['archived']): ?>
+                <div class="table-wrap faculty-table-wrap faculty-card-table-wrap faculty-archived-table-wrap">
+                    <table class="faculty-table faculty-card-table faculty-archived-table">
+                        <thead>
+                        <tr>
+                            <th>Faculty ID</th>
+                            <th>Name</th>
+                            <th>Department</th>
+                            <th>Email</th>
+                            <th>Archived</th>
+                            <th>Action</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <?php foreach ($groups['archived'] as $teacher): ?>
+                            <tr>
+                                <td class="mono" data-label="Faculty ID"><?= e($teacher['teacher_code']) ?></td>
+                                <td data-label="Name"><?= e($teacher['full_name']) ?></td>
+                                <td data-label="Department"><?= e($teacher['department_name']) ?></td>
+                                <td class="faculty-email-cell" data-label="Email"><?= e($teacher['email']) ?></td>
+                                <td data-label="Archived"><?= e((string) ($teacher['archived_at'] ?? '-')) ?></td>
+                                <td data-label="Action">
+                                    <div class="actions-cell">
+                                        <form method="post">
+                                            <input type="hidden" name="action" value="restore">
+                                            <input type="hidden" name="teacher_id" value="<?= e((string) $teacher['id']) ?>">
+                                            <button class="btn-primary" type="submit">Restore</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php else: ?>
+                <div class="empty-state">No faculty accounts have been archived yet.</div>
             <?php endif; ?>
         </article>
 
@@ -274,4 +331,3 @@ render_dashboard_layout('Faculty Approval & Records', 'admin', 'faculty', 'admin
     </section>
     <?php
 });
-

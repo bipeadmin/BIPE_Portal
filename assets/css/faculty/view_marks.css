@@ -52,12 +52,16 @@
 .role-teacher .view-marks-table th:nth-child(4),
 .role-teacher .view-marks-table td:nth-child(4),
 .role-teacher .view-marks-table th:nth-child(5),
-.role-teacher .view-marks-table td:nth-child(5) {
-  width: 120px;
+.role-teacher .view-marks-table td:nth-child(5),
+.role-teacher .view-marks-table th:nth-child(6),
+.role-teacher .view-marks-table td:nth-child(6),
+.role-teacher .view-marks-table th:nth-child(7),
+.role-teacher .view-marks-table td:nth-child(7) {
+  width: 104px;
 }
 
 .role-teacher .view-marks-table td {
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 @media (max-width: 960px) {

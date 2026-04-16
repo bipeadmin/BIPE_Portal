@@ -18,8 +18,76 @@
   min-width: 960px;
 }
 
+.role-admin .assignment-student-card {
+  width: 100%;
+  max-width: 100%;
+}
+
+.role-admin .assignment-student-wrap {
+  width: 100%;
+  max-width: 100%;
+  max-height: min(68vh, 760px);
+  overflow-x: auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable both-edges;
+}
+
 .role-admin .assignment-student-table {
-  min-width: 1280px;
+  min-width: 1760px;
+  table-layout: fixed;
+}
+
+.role-admin .assignment-student-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: rgba(241, 245, 249, 0.98);
+  backdrop-filter: blur(8px);
+}
+
+.role-admin .assignment-student-col-department {
+  width: 170px;
+}
+
+.role-admin .assignment-student-col-semester {
+  width: 130px;
+}
+
+.role-admin .assignment-student-col-subject {
+  width: 220px;
+}
+
+.role-admin .assignment-student-col-assignment {
+  width: 130px;
+}
+
+.role-admin .assignment-student-col-student {
+  width: 190px;
+}
+
+.role-admin .assignment-student-col-enrollment {
+  width: 150px;
+}
+
+.role-admin .assignment-student-col-year {
+  width: 110px;
+}
+
+.role-admin .assignment-student-col-email {
+  width: 230px;
+}
+
+.role-admin .assignment-student-col-faculty {
+  width: 180px;
+}
+
+.role-admin .assignment-student-col-status {
+  width: 120px;
+}
+
+.role-admin .assignment-student-col-submitted-at {
+  width: 160px;
 }
 
 .role-admin .assignment-summary-table td,
@@ -41,6 +109,16 @@
 .role-admin .assignment-summary-table .badge,
 .role-admin .assignment-student-table .badge {
   max-width: 100%;
+}
+
+.role-admin .assignment-student-table td {
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+.role-admin .assignment-student-table .badge,
+.role-admin .assignment-student-table .mono {
+  white-space: nowrap;
 }
 
 @media (max-width: 720px) {
@@ -72,6 +150,12 @@
     overflow-y: visible;
     border: none;
     background: transparent;
+  }
+
+  .role-admin .assignment-student-wrap {
+    max-height: 72vh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
 
   .role-admin .assignment-summary-table,

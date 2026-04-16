@@ -81,6 +81,12 @@ function require_current_teacher(): array
         redirect_to('faculty/login.php');
     }
 
+    if (($teacher['status'] ?? '') === 'archived') {
+        logout_session();
+        flash('info', 'This faculty account has been archived by the administrator. Historical activity is preserved, but login access is disabled.');
+        redirect_to('faculty/login.php');
+    }
+
     return $teacher;
 }
 
@@ -545,12 +551,13 @@ function faculty_groups(): array
         'SELECT t.*, d.name AS department_name, d.short_name
          FROM teachers t
          INNER JOIN departments d ON d.id = t.department_id
-         ORDER BY FIELD(t.status, "pending", "approved", "rejected"), t.full_name'
+         ORDER BY FIELD(t.status, "pending", "approved", "archived", "rejected"), t.full_name'
     );
 
     return [
         'pending' => array_values(array_filter($rows, static fn (array $row): bool => $row['status'] === 'pending')),
         'approved' => array_values(array_filter($rows, static fn (array $row): bool => $row['status'] === 'approved')),
+        'archived' => array_values(array_filter($rows, static fn (array $row): bool => $row['status'] === 'archived')),
         'rejected' => array_values(array_filter($rows, static fn (array $row): bool => $row['status'] === 'rejected')),
     ];
 }
@@ -559,7 +566,7 @@ function approve_teacher_account(int $teacherId): void
 {
     execute_sql(
         'UPDATE teachers
-         SET status = "approved", approved_at = NOW(), rejected_at = NULL, updated_at = NOW()
+         SET status = "approved", approved_at = NOW(), rejected_at = NULL, archived_at = NULL, updated_at = NOW()
          WHERE id = :id',
         ['id' => $teacherId]
     );
@@ -569,7 +576,7 @@ function reject_teacher_account(int $teacherId): void
 {
     execute_sql(
         'UPDATE teachers
-         SET status = "rejected", rejected_at = NOW(), updated_at = NOW()
+         SET status = "rejected", rejected_at = NOW(), archived_at = NULL, updated_at = NOW()
          WHERE id = :id',
         ['id' => $teacherId]
     );
@@ -580,7 +587,7 @@ function approve_all_pending_teachers(): int
     $count = (int) query_value('SELECT COUNT(*) FROM teachers WHERE status = "pending"');
     execute_sql(
         'UPDATE teachers
-         SET status = "approved", approved_at = NOW(), rejected_at = NULL, updated_at = NOW()
+         SET status = "approved", approved_at = NOW(), rejected_at = NULL, archived_at = NULL, updated_at = NOW()
          WHERE status = "pending"'
     );
 
@@ -592,16 +599,31 @@ function reject_all_pending_teachers(): int
     $count = (int) query_value('SELECT COUNT(*) FROM teachers WHERE status = "pending"');
     execute_sql(
         'UPDATE teachers
-         SET status = "rejected", rejected_at = NOW(), updated_at = NOW()
+         SET status = "rejected", rejected_at = NOW(), archived_at = NULL, updated_at = NOW()
          WHERE status = "pending"'
     );
 
     return $count;
 }
 
-function delete_teacher_account(int $teacherId): void
+function archive_teacher_account(int $teacherId): void
 {
-    execute_sql('DELETE FROM teachers WHERE id = :id', ['id' => $teacherId]);
+    execute_sql(
+        'UPDATE teachers
+         SET status = "archived", archived_at = NOW(), updated_at = NOW()
+         WHERE id = :id AND status = "approved"',
+        ['id' => $teacherId]
+    );
+}
+
+function restore_teacher_account(int $teacherId): void
+{
+    execute_sql(
+        'UPDATE teachers
+         SET status = "approved", approved_at = COALESCE(approved_at, NOW()), archived_at = NULL, updated_at = NOW()
+         WHERE id = :id AND status = "archived"',
+        ['id' => $teacherId]
+    );
 }
 
 function purge_rejected_teachers(): int
@@ -863,6 +885,9 @@ function create_teacher_access_request(string $teacherCode, string $requestType,
     if (!$teacher) {
         throw new RuntimeException('Faculty ID not found. Enter the registered faculty ID.');
     }
+    if (($teacher['status'] ?? '') === 'archived') {
+        throw new RuntimeException('This faculty account has been archived. Contact the administrator if access needs to be restored.');
+    }
 
     $requestType = strtolower(trim($requestType));
     $requestedPasswordHash = null;
@@ -936,8 +961,12 @@ function approve_support_request(int $requestId, int $adminId): array
             if ($teacherId <= 0 || $passwordHash === '') {
                 throw new RuntimeException('Requested password data is missing for this approval.');
             }
-            if (!teacher_by_id($teacherId)) {
+            $teacher = teacher_by_id($teacherId);
+            if (!$teacher) {
                 throw new RuntimeException('The faculty account linked to this request no longer exists.');
+            }
+            if (($teacher['status'] ?? '') === 'archived') {
+                throw new RuntimeException('The linked faculty account is archived and cannot receive a password reset approval.');
             }
 
             execute_sql(
@@ -1133,29 +1162,23 @@ function upsert_attendance_sheet(int $teacherId, int $departmentId, int $yearLev
         );
 
         if ($session) {
-            execute_sql(
-                'UPDATE attendance_sessions
-                 SET teacher_id = :teacher_id, remarks = :remarks, updated_at = NOW()
-                 WHERE id = :id',
-                ['teacher_id' => $teacherId, 'remarks' => $remarks, 'id' => $session['id']]
-            );
-            $sessionId = (int) $session['id'];
-        } else {
-            execute_sql(
-                'INSERT INTO attendance_sessions (academic_year_id, department_id, year_level, semester_no, teacher_id, attendance_date, remarks)
-                 VALUES (:academic_year_id, :department_id, :year_level, :semester_no, :teacher_id, :attendance_date, :remarks)',
-                [
-                    'academic_year_id' => $academicYearId,
-                    'department_id' => $departmentId,
-                    'year_level' => $yearLevel,
-                    'semester_no' => $semesterNo,
-                    'teacher_id' => $teacherId,
-                    'attendance_date' => $date,
-                    'remarks' => $remarks,
-                ]
-            );
-            $sessionId = (int) db()->lastInsertId();
+            throw new RuntimeException('Attendance is already saved for this class and date. Saved attendance records cannot be edited again.');
         }
+
+        execute_sql(
+            'INSERT INTO attendance_sessions (academic_year_id, department_id, year_level, semester_no, teacher_id, attendance_date, remarks)
+             VALUES (:academic_year_id, :department_id, :year_level, :semester_no, :teacher_id, :attendance_date, :remarks)',
+            [
+                'academic_year_id' => $academicYearId,
+                'department_id' => $departmentId,
+                'year_level' => $yearLevel,
+                'semester_no' => $semesterNo,
+                'teacher_id' => $teacherId,
+                'attendance_date' => $date,
+                'remarks' => $remarks,
+            ]
+        );
+        $sessionId = (int) db()->lastInsertId();
 
         foreach ($statuses as $studentId => $status) {
             execute_sql(
@@ -1274,7 +1297,6 @@ function attendance_scope_detail(?int $departmentId, int $yearLevel, int $semest
         'session_count' => count($sessions),
     ];
 }
-
 function attendance_session_detail(int $departmentId, int $yearLevel, int $semesterNo, string $date): ?array
 {
     return attendance_scope_detail($departmentId, $yearLevel, $semesterNo, $date);

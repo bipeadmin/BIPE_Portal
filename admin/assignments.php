@@ -31,21 +31,27 @@ if (!in_array($submissionStatus, ['', 'submitted', 'pending'], true)) {
     $submissionStatus = '';
 }
 
-$subjectOptions = $departmentId > 0
-    ? query_all(
-        'SELECT s.*, d.short_name AS department_short_name
-         FROM subjects s
-         INNER JOIN departments d ON d.id = s.department_id
-         WHERE s.department_id = :department_id
-         ORDER BY s.semester_no, s.subject_name',
-        ['department_id' => $departmentId]
-    )
-    : query_all(
-        'SELECT s.*, d.short_name AS department_short_name
-         FROM subjects s
-         INNER JOIN departments d ON d.id = s.department_id
-         ORDER BY d.name, s.semester_no, s.subject_name'
-    );
+$subjectOptionsSql = 'SELECT s.*, d.short_name AS department_short_name
+                      FROM subjects s
+                      INNER JOIN departments d ON d.id = s.department_id
+                      WHERE 1 = 1';
+$subjectOptionsParams = [];
+if ($departmentId > 0) {
+    $subjectOptionsSql .= ' AND s.department_id = :department_id';
+    $subjectOptionsParams['department_id'] = $departmentId;
+}
+if ($semesterNo > 0) {
+    $subjectOptionsSql .= ' AND s.semester_no = :semester_no';
+    $subjectOptionsParams['semester_no'] = $semesterNo;
+}
+$subjectOptionsSql .= $departmentId > 0
+    ? ' ORDER BY s.subject_name'
+    : ' ORDER BY d.name, s.semester_no, s.subject_name';
+$subjectOptions = query_all($subjectOptionsSql, $subjectOptionsParams);
+$validSubjectIds = array_values(array_map(static fn (array $subject): int => (int) $subject['id'], $subjectOptions));
+if ($subjectId > 0 && !in_array($subjectId, $validSubjectIds, true)) {
+    $subjectId = 0;
+}
 
 $summarySql = 'SELECT a.*, d.name AS department_name, s.subject_name, t.full_name AS teacher_name,
                       COALESCE(sc.total_students, 0) AS total_students,
@@ -265,6 +271,7 @@ render_dashboard_layout('Assignment Oversight', 'admin', 'assignments', 'admin/a
                             <td data-label="Pending"><?= e((string) $pending) ?></td>
                             <td data-label="Action" class="action-cell">
                                 <form method="post">
+                                    <?= csrf_field() ?>
                                     <input type="hidden" name="action" value="delete_assignment">
                                     <input type="hidden" name="assignment_id" value="<?= e((string) $row['id']) ?>">
                                     <button class="btn-danger" type="submit" data-confirm="Delete this assignment and its submission tracker?">Delete</button>
@@ -290,6 +297,19 @@ render_dashboard_layout('Assignment Oversight', 'admin', 'assignments', 'admin/a
         <?php if ($submissionRows): ?>
             <div class="table-wrap assignment-student-wrap">
                 <table class="assignment-student-table">
+                    <colgroup>
+                        <col class="assignment-student-col-department">
+                        <col class="assignment-student-col-semester">
+                        <col class="assignment-student-col-subject">
+                        <col class="assignment-student-col-assignment">
+                        <col class="assignment-student-col-student">
+                        <col class="assignment-student-col-enrollment">
+                        <col class="assignment-student-col-year">
+                        <col class="assignment-student-col-email">
+                        <col class="assignment-student-col-faculty">
+                        <col class="assignment-student-col-status">
+                        <col class="assignment-student-col-submitted-at">
+                    </colgroup>
                     <thead>
                     <tr>
                         <th>Department</th>
@@ -332,3 +352,4 @@ render_dashboard_layout('Assignment Oversight', 'admin', 'assignments', 'admin/a
     </article>
     <?php
 });
+

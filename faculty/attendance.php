@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 require_once __DIR__ . '/../app/bootstrap.php';
@@ -41,7 +42,7 @@ if (is_post() && post('action') === 'save_attendance') {
 
         upsert_attendance_scope((int) $teacher['id'], $departmentId, $yearLevel, $semesterNo, $attendanceDate, $statuses, trim((string) post('remarks')) ?: null);
         audit_log('teacher', (string) ($teacher['teacher_code'] ?? ('teacher#' . $teacher['id'])), 'ATTENDANCE_SAVED', 'Saved attendance for ' . ($selectedDepartment['name'] ?? 'selected scope') . ', semester ' . $semesterNo . ' on ' . $attendanceDate);
-        flash('success', 'Attendance saved successfully.');
+        flash('success', 'Attendance saved successfully. This record is now locked from further edits.');
     } catch (Throwable $exception) {
         flash_exception($exception);
     }
@@ -51,13 +52,14 @@ if (is_post() && post('action') === 'save_attendance') {
 
 $students = attendance_scope_student_rows($departmentId, $yearLevel, $semesterNo);
 $existing = attendance_scope_detail($departmentId, $yearLevel, $semesterNo, $attendanceDate);
+$attendanceLocked = $existing !== null;
 $existingMap = [];
 foreach (($existing['records'] ?? []) as $record) {
     $existingMap[(int) $record['student_id']] = $record['status'];
 }
 $holiday = holiday_event_for_date($allDepartmentsMode ? null : $departmentId, $attendanceDate);
-$cardSubtitle = $existing
-    ? ($allDepartmentsMode ? 'Editing existing attendance sessions for the selected scope.' : 'Editing an existing attendance session.')
+$cardSubtitle = $attendanceLocked
+    ? 'Attendance has already been saved for this class and date. The record is read-only now.'
     : 'Create a new attendance session for this class.';
 $totalStudents = count($students);
 $absentStudents = 0;
@@ -69,7 +71,7 @@ foreach ($students as $student) {
 }
 $presentStudents = $totalStudents - $absentStudents;
 
-render_dashboard_layout('Mark Attendance', 'teacher', 'attendance', 'faculty/attendance.css', 'faculty/attendance.js', function () use ($departments, $selectedDepartment, $departmentId, $departmentQueryValue, $allDepartmentsMode, $yearLevel, $semesterNo, $attendanceDate, $students, $existingMap, $holiday, $existing, $cardSubtitle, $totalStudents, $presentStudents, $absentStudents): void {
+render_dashboard_layout('Mark Attendance', 'teacher', 'attendance', 'faculty/attendance.css', 'faculty/attendance.js', function () use ($departments, $selectedDepartment, $departmentId, $departmentQueryValue, $allDepartmentsMode, $yearLevel, $semesterNo, $attendanceDate, $students, $existingMap, $holiday, $attendanceLocked, $existing, $cardSubtitle, $totalStudents, $presentStudents, $absentStudents): void {
     ?>
     <section class="data-card attendance-filters-card">
         <div class="card-head">
@@ -118,6 +120,10 @@ render_dashboard_layout('Mark Attendance', 'teacher', 'attendance', 'faculty/att
         <div class="notice-box warning">This date falls under <strong><?= e($holiday['event_type']) ?></strong>: <?= e($holiday['title']) ?> (<?= e(holiday_event_date_label($holiday)) ?>, <?= e((string) $holidayDays) ?> day<?= $holidayDays === 1 ? '' : 's' ?>). Attendance can still be saved if you want to override it.</div>
     <?php endif; ?>
 
+    <?php if ($attendanceLocked): ?>
+        <div class="notice-box">Attendance is already saved for <?= e($attendanceDate) ?>. You can review it below, but you cannot edit it again.</div>
+    <?php endif; ?>
+
     <section class="data-card attendance-sheet-card">
         <div class="card-head attendance-sheet-head">
             <div class="attendance-sheet-copy">
@@ -147,15 +153,18 @@ render_dashboard_layout('Mark Attendance', 'teacher', 'attendance', 'faculty/att
         </div>
         <?php if ($students): ?>
             <form method="post" class="stack attendance-sheet-form">
+                <?= csrf_field() ?>
                 <input type="hidden" name="action" value="save_attendance">
                 <input type="hidden" name="department_id" value="<?= e($departmentQueryValue) ?>">
                 <input type="hidden" name="year_level" value="<?= e((string) $yearLevel) ?>">
                 <input type="hidden" name="semester_no" value="<?= e((string) $semesterNo) ?>">
                 <input type="hidden" name="attendance_date" value="<?= e($attendanceDate) ?>">
-                <div class="inline-actions attendance-actions">
-                    <button class="btn-secondary" type="button" data-mark-all="P">Mark All Present</button>
-                    <button class="btn-secondary" type="button" data-mark-all="A">Mark All Absent</button>
-                </div>
+                <?php if (!$attendanceLocked): ?>
+                    <div class="inline-actions attendance-actions">
+                        <button class="btn-secondary" type="button" data-mark-all="P">Mark All Present</button>
+                        <button class="btn-secondary" type="button" data-mark-all="A">Mark All Absent</button>
+                    </div>
+                <?php endif; ?>
                 <div class="table-wrap attendance-sheet-wrap">
                     <table class="attendance-sheet-table">
                         <thead>
@@ -175,21 +184,29 @@ render_dashboard_layout('Mark Attendance', 'teacher', 'attendance', 'faculty/att
                                 <td class="mono attendance-enrollment-cell" data-label="Enrollment"><?= e($student['enrollment_no']) ?></td>
                                 <td class="attendance-name-cell" data-label="Student Name"><?= e($student['full_name']) ?></td>
                                 <td class="attendance-status-cell" data-label="Status">
-                                    <select class="form-select attendance-select" name="status[<?= e((string) $student['id']) ?>]">
-                                        <option value="P" <?= $status === 'P' ? 'selected' : '' ?>>Present</option>
-                                        <option value="A" <?= $status === 'A' ? 'selected' : '' ?>>Absent</option>
-                                    </select>
+                                    <?php if ($attendanceLocked): ?>
+                                        <span class="badge <?= $status === 'P' ? 'success' : 'danger' ?>"><?= e($status === 'P' ? 'Present' : 'Absent') ?></span>
+                                    <?php else: ?>
+                                        <select class="form-select attendance-select" name="status[<?= e((string) $student['id']) ?>]">
+                                            <option value="P" <?= $status === 'P' ? 'selected' : '' ?>>Present</option>
+                                            <option value="A" <?= $status === 'A' ? 'selected' : '' ?>>Absent</option>
+                                        </select>
+                                    <?php endif; ?>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
                         </tbody>
                     </table>
                 </div>
-                <div class="form-group">
-                    <label class="form-label" for="attendance-remarks">Remarks</label>
-                    <textarea class="form-textarea" id="attendance-remarks" name="remarks" placeholder="Optional note for this attendance sheet"><?= e((string) ($existing['remarks'] ?? '')) ?></textarea>
-                </div>
-                <button class="btn-primary" type="submit">Save Attendance</button>
+                <?php if ($attendanceLocked): ?>
+                    <div class="notice-box attendance-readonly-note"><?= e((string) ($existing['remarks'] ?? 'No remarks were saved for this attendance sheet.')) ?></div>
+                <?php else: ?>
+                    <div class="form-group">
+                        <label class="form-label" for="attendance-remarks">Remarks</label>
+                        <textarea class="form-textarea" id="attendance-remarks" name="remarks" placeholder="Optional note for this attendance sheet"><?= e((string) ($existing['remarks'] ?? '')) ?></textarea>
+                    </div>
+                    <button class="btn-primary" type="submit">Save Attendance</button>
+                <?php endif; ?>
             </form>
         <?php else: ?>
             <div class="empty-state">No students found for the selected filter, year, and semester.</div>
@@ -197,5 +214,3 @@ render_dashboard_layout('Mark Attendance', 'teacher', 'attendance', 'faculty/att
     </section>
     <?php
 });
-
-

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 require_once __DIR__ . '/../app/bootstrap.php';
@@ -74,28 +75,41 @@ $recordsMap = $upload ? mark_records_map_for_upload((int) $upload['id']) : [];
 
 $recordedCount = 0;
 $absentCount = 0;
+$passCount = 0;
+$failCount = 0;
 foreach ($students as $student) {
     $entry = $recordsMap[(int) $student['id']] ?? null;
-    if ($entry) {
-        $recordedCount++;
-        if ((int) ($entry['is_absent'] ?? 0) === 1) {
-            $absentCount++;
-        }
+    if (!$entry) {
+        continue;
+    }
+
+    $recordedCount++;
+    $isAbsent = (int) ($entry['is_absent'] ?? 0) === 1;
+    if ($isAbsent) {
+        $absentCount++;
+        continue;
+    }
+
+    $marks = (float) ($entry['marks_obtained'] ?? 0);
+    $result = $upload ? pass_fail_from_marks($marks, (float) $upload['max_marks']) : 'Pending';
+    if ($result === 'Pass') {
+        $passCount++;
+    }
+    if ($result === 'Fail') {
+        $failCount++;
     }
 }
 $totalStudents = count($students);
 $missingCount = max(0, $totalStudents - $recordedCount);
 $selectedDepartmentLabel = $selectedSubject['department_name'] ?? ($departmentMap[$selectedDepartmentId]['name'] ?? ($teacher['department_name'] ?? 'Department'));
 
-
-render_dashboard_layout('View Marks', 'teacher', 'view_marks', 'faculty/view_marks.css', 'faculty/view_marks.js', function () use ($departments, $selectedDepartmentId, $departmentQueryValue, $allDepartmentsMode, $semesterNo, $subjectId, $markTypeId, $subjectOptions, $markTypes, $students, $recordsMap, $upload, $selectedDepartmentLabel, $totalStudents, $recordedCount, $absentCount, $missingCount): void {
+render_dashboard_layout('View Marks', 'teacher', 'view_marks', 'faculty/view_marks.css', 'faculty/view_marks.js', function () use ($departments, $selectedDepartmentId, $departmentQueryValue, $allDepartmentsMode, $semesterNo, $subjectId, $markTypeId, $subjectOptions, $markTypes, $students, $recordsMap, $upload, $selectedDepartmentLabel, $totalStudents, $recordedCount, $absentCount, $missingCount, $passCount, $failCount): void {
     ?>
     <article class="data-card view-marks-card">
         <div class="card-head view-marks-head">
             <div>
                 <p class="eyebrow">Marks Viewer</p>
                 <h3 class="card-title">Review saved marks by subject and mark type</h3>
-
             </div>
         </div>
         <form method="get" class="filters view-marks-filters" style="margin-bottom:14px">
@@ -146,6 +160,8 @@ render_dashboard_layout('View Marks', 'teacher', 'view_marks', 'faculty/view_mar
                 <article class="stat-card"><p class="eyebrow">Department</p><h3 class="stat-value view-marks-stat-text"><?= e($selectedDepartmentLabel) ?></h3><p class="stat-label"><?= e(semester_label($semesterNo)) ?> roster</p></article>
                 <article class="stat-card"><p class="eyebrow">Total Students</p><h3 class="stat-value"><?= e((string) $totalStudents) ?></h3><p class="stat-label">Students in the selected class</p></article>
                 <article class="stat-card"><p class="eyebrow">Recorded</p><h3 class="stat-value"><?= e((string) $recordedCount) ?></h3><p class="stat-label">Marks already saved</p></article>
+                <article class="stat-card"><p class="eyebrow">Pass / Fail</p><h3 class="stat-value"><?= e((string) $passCount) ?> / <?= e((string) $failCount) ?></h3><p class="stat-label">Current result split for this test</p></article>
+                <article class="stat-card"><p class="eyebrow">Absent</p><h3 class="stat-value"><?= e((string) $absentCount) ?></h3><p class="stat-label">Students marked absent</p></article>
                 <article class="stat-card"><p class="eyebrow">Missing</p><h3 class="stat-value"><?= e((string) $missingCount) ?></h3><p class="stat-label">Students without a saved record</p></article>
             </section>
 
@@ -156,8 +172,10 @@ render_dashboard_layout('View Marks', 'teacher', 'view_marks', 'faculty/view_mar
                         <th>Enrollment</th>
                         <th>Name</th>
                         <th>Marks</th>
+                        <th>Max</th>
                         <th>Status</th>
                         <th>Grade</th>
+                        <th>Result</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -167,13 +185,23 @@ render_dashboard_layout('View Marks', 'teacher', 'view_marks', 'faculty/view_mar
                         $marks = $entry['marks_obtained'] ?? null;
                         $statusLabel = $isAbsent ? 'Absent' : ($entry ? 'Recorded' : 'Missing');
                         $statusClass = $isAbsent ? 'warning' : ($entry ? 'success' : 'danger');
+                        $gradeLabel = (!$isAbsent && $marks !== null && $upload) ? grade_from_marks((float) $marks, (float) $upload['max_marks']) : '-';
+                        $resultLabel = 'Pending';
+                        if ($isAbsent) {
+                            $resultLabel = 'Absent';
+                        } elseif ($marks !== null && $upload) {
+                            $resultLabel = pass_fail_from_marks((float) $marks, (float) $upload['max_marks']);
+                        }
+                        $resultClass = $resultLabel === 'Pass' ? 'success' : ($resultLabel === 'Fail' ? 'danger' : ($resultLabel === 'Absent' ? 'warning' : 'info'));
                         ?>
                         <tr>
                             <td class="mono" data-label="Enrollment"><?= e($student['enrollment_no']) ?></td>
                             <td data-label="Student Name"><?= e($student['full_name']) ?></td>
                             <td data-label="Marks"><?= $isAbsent ? 'AB' : e((string) ($marks ?? '--')) ?></td>
+                            <td data-label="Max"><?= $upload ? e((string) $upload['max_marks']) : '--' ?></td>
                             <td data-label="Status"><span class="badge <?= e($statusClass) ?>"><?= e($statusLabel) ?></span></td>
-                            <td data-label="Grade"><?= (!$isAbsent && $marks !== null && $upload) ? '<span class="badge info">' . e(grade_from_marks((float) $marks, (float) $upload['max_marks'])) . '</span>' : '-' ?></td>
+                            <td data-label="Grade"><?= $gradeLabel !== '-' ? '<span class="badge info">' . e($gradeLabel) . '</span>' : '-' ?></td>
+                            <td data-label="Result"><span class="badge <?= e($resultClass) ?>"><?= e($resultLabel) ?></span></td>
                         </tr>
                     <?php endforeach; ?>
                     </tbody>
@@ -185,4 +213,3 @@ render_dashboard_layout('View Marks', 'teacher', 'view_marks', 'faculty/view_mar
     </article>
     <?php
 });
-

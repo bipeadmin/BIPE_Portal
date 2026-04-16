@@ -314,6 +314,7 @@ render_dashboard_layout('Upload Marks', 'teacher', 'marks', 'faculty/marks.css',
 
             <?php if ($subjectId > 0 && $students): ?>
                 <form method="post" class="stack marks-manual-form">
+                    <?= csrf_field() ?>
                     <input type="hidden" name="action" value="save_manual">
                     <input type="hidden" name="department_filter" value="<?= e($departmentQueryValue) ?>">
                     <input type="hidden" name="department_id" value="<?= e((string) $sheetDepartmentId) ?>">
@@ -366,6 +367,7 @@ render_dashboard_layout('Upload Marks', 'teacher', 'marks', 'faculty/marks.css',
                 </div>
             </div>
             <form method="post" enctype="multipart/form-data" class="form-grid marks-csv-form">
+                <?= csrf_field() ?>
                 <input type="hidden" name="action" value="save_csv">
                 <input type="hidden" name="department_filter" value="<?= e($departmentQueryValue) ?>">
                 <input type="hidden" name="department_id" value="<?= e((string) $sheetDepartmentId) ?>">
@@ -460,6 +462,7 @@ render_dashboard_layout('Upload Marks', 'teacher', 'marks', 'faculty/marks.css',
                             <td data-label="Uploaded"><span class="marks-upload-time"><?= e((string) $upload['uploaded_at']) ?></span></td>
                             <td class="marks-upload-action-cell" data-label="Action">
                                 <form method="post">
+                                    <?= csrf_field() ?>
                                     <input type="hidden" name="action" value="delete_upload">
                                     <input type="hidden" name="department_filter" value="<?= e($departmentQueryValue) ?>">
                                     <input type="hidden" name="department_id" value="<?= e((string) $upload['department_id']) ?>">
@@ -481,4 +484,5 @@ render_dashboard_layout('Upload Marks', 'teacher', 'marks', 'faculty/marks.css',
     </article>
     <?php
 });
+
 

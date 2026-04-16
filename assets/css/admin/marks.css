@@ -1,1 +1,43 @@
-.page-content .stat-card:nth-child(3) .stat-value { font-size: 28px; }
+.page-content .stat-card:nth-child(3) .stat-value {
+  font-size: 28px;
+}
+
+.role-admin .admin-marks-head {
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.role-admin .admin-marks-export-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.role-admin .admin-marks-filter-form {
+  align-items: stretch;
+}
+
+.role-admin .admin-marks-table-wrap {
+  min-width: 0;
+}
+
+.role-admin .admin-marks-table td {
+  vertical-align: top;
+  overflow-wrap: break-word;
+}
+
+.role-admin .admin-marks-table .badge {
+  white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  .role-admin .admin-marks-head {
+    flex-direction: column;
+  }
+
+  .role-admin .admin-marks-export-actions,
+  .role-admin .admin-marks-export-actions .btn-secondary,
+  .role-admin .admin-marks-filter-form .btn-primary {
+    width: 100%;
+  }
+}

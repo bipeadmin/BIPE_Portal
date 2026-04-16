@@ -278,6 +278,14 @@ function grade_from_marks(float $marks, float $maxMarks): string
     };
 }
 
+function pass_fail_from_marks(float $marks, float $maxMarks): string
+{
+    if ($maxMarks <= 0) {
+        return 'Pending';
+    }
+
+    return grade_from_marks($marks, $maxMarks) === 'F' ? 'Fail' : 'Pass';
+}
 function portal_stats(): array
 {
     return [
@@ -395,6 +403,19 @@ function schema_column_exists(string $table, string $column): bool
     );
 }
 
+function schema_column_type(string $table, string $column): ?string
+{
+    $value = query_value(
+        'SELECT COLUMN_TYPE
+         FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table_name AND COLUMN_NAME = :column_name
+         LIMIT 1',
+        ['table_name' => $table, 'column_name' => $column]
+    );
+
+    return $value !== null ? (string) $value : null;
+}
+
 function ensure_runtime_schema_support(): void
 {
     static $done = false;
@@ -408,6 +429,7 @@ function ensure_runtime_schema_support(): void
         ['admins', 'profile_image_path', 'ALTER TABLE admins ADD COLUMN profile_image_path VARCHAR(255) DEFAULT NULL AFTER phone_number'],
         ['teachers', 'phone_number', 'ALTER TABLE teachers ADD COLUMN phone_number VARCHAR(20) DEFAULT NULL AFTER email'],
         ['teachers', 'profile_image_path', 'ALTER TABLE teachers ADD COLUMN profile_image_path VARCHAR(255) DEFAULT NULL AFTER phone_number'],
+        ['teachers', 'archived_at', 'ALTER TABLE teachers ADD COLUMN archived_at DATETIME DEFAULT NULL AFTER rejected_at'],
         ['students', 'phone_number', 'ALTER TABLE students ADD COLUMN phone_number VARCHAR(20) DEFAULT NULL AFTER email'],
         ['students', 'profile_image_path', 'ALTER TABLE students ADD COLUMN profile_image_path VARCHAR(255) DEFAULT NULL AFTER phone_number'],
     ];
@@ -416,6 +438,14 @@ function ensure_runtime_schema_support(): void
         if (!schema_column_exists($table, $column)) {
             execute_sql($sql);
         }
+    }
+
+    $teacherStatusType = strtolower((string) (schema_column_type('teachers', 'status') ?? ''));
+    if ($teacherStatusType !== '' && strpos($teacherStatusType, "'archived'") === false) {
+        execute_sql(
+            'ALTER TABLE teachers
+             MODIFY COLUMN status ENUM("pending", "approved", "rejected", "archived") NOT NULL DEFAULT "pending"'
+        );
     }
 
     execute_sql(
@@ -836,6 +866,7 @@ function password_reset_request_success_message(?string $otpPreview = null): str
 
     return $message;
 }
+
 
 
 

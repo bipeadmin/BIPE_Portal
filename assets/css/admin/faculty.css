@@ -81,6 +81,26 @@
   width: 168px;
 }
 
+.role-admin .faculty-archived-table th:nth-child(1),
+.role-admin .faculty-archived-table td:nth-child(1) {
+  width: 112px;
+}
+
+.role-admin .faculty-archived-table th:nth-child(3),
+.role-admin .faculty-archived-table td:nth-child(3) {
+  width: 160px;
+}
+
+.role-admin .faculty-archived-table th:nth-child(5),
+.role-admin .faculty-archived-table td:nth-child(5) {
+  width: 144px;
+}
+
+.role-admin .faculty-archived-table th:nth-child(6),
+.role-admin .faculty-archived-table td:nth-child(6) {
+  width: 120px;
+}
+
 @media (max-width: 1200px) {
   .role-admin .faculty-table {
     table-layout: auto;

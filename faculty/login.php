@@ -32,6 +32,8 @@ if (is_post()) {
         flash('info', 'Your faculty registration is still pending administrator approval.');
     } elseif ($result === 'rejected') {
         flash('error', 'Your faculty registration was rejected. Please contact the administrator.');
+    } elseif ($result === 'archived') {
+        flash('info', 'This faculty account has been archived by the administrator. Historical records are preserved, but login access is disabled.');
     } else {
         flash('error', 'Invalid faculty ID or password.');
     }

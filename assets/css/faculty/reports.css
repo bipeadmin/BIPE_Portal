@@ -1,3 +1,13 @@
+@media (min-width: 961px) and (max-width: 1472px) {
+  .role-teacher .faculty-report-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .role-teacher .faculty-attendance-report-table,
+  .role-teacher .faculty-assignment-report-table {
+    table-layout: auto;
+  }
+}
 .role-teacher .faculty-report-filter-card,
 .role-teacher .faculty-report-card,
 .role-teacher .faculty-report-table-wrap {
@@ -37,7 +47,36 @@
 }
 
 .role-teacher .faculty-report-table td {
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+.role-teacher .faculty-attendance-report-table td:nth-child(1),
+.role-teacher .faculty-attendance-report-table td:nth-child(3),
+.role-teacher .faculty-attendance-report-table td:nth-child(4),
+.role-teacher .faculty-attendance-report-table td:nth-child(5),
+.role-teacher .faculty-attendance-report-table td:nth-child(6) {
+  white-space: nowrap;
+}
+
+.role-teacher .faculty-attendance-report-table th:nth-child(1),
+.role-teacher .faculty-attendance-report-table td:nth-child(1) {
+  width: 126px;
+}
+
+.role-teacher .faculty-attendance-report-table th:nth-child(3),
+.role-teacher .faculty-attendance-report-table td:nth-child(3) {
+  width: 132px;
+}
+
+.role-teacher .faculty-attendance-report-table th:nth-child(4),
+.role-teacher .faculty-attendance-report-table td:nth-child(4),
+.role-teacher .faculty-attendance-report-table th:nth-child(5),
+.role-teacher .faculty-attendance-report-table td:nth-child(5),
+.role-teacher .faculty-attendance-report-table th:nth-child(6),
+.role-teacher .faculty-attendance-report-table td:nth-child(6) {
+  width: 88px;
+  text-align: center;
 }
 
 .role-teacher .faculty-report-table th:nth-child(1),
@@ -284,4 +323,5 @@
     white-space: normal;
   }
 }
+
 

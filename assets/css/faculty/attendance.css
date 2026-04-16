@@ -281,3 +281,8 @@
   }
 }
 
+
+.role-teacher .attendance-readonly-note {
+  margin: 0;
+}
+

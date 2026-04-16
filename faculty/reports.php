@@ -181,7 +181,7 @@ render_dashboard_layout('Faculty Reports', 'teacher', 'reports', 'faculty/report
             <div class="card-head faculty-report-head"><div><p class="eyebrow">Attendance History</p><h3 class="card-title">Attendance sessions saved by this teacher</h3></div></div>
             <?php if ($attendanceHistory): ?>
                 <div class="table-wrap faculty-report-table-wrap">
-                    <table class="faculty-report-table">
+                    <table class="faculty-report-table faculty-attendance-report-table">
                         <thead>
                         <tr>
                             <th>Date</th>
@@ -292,4 +292,5 @@ render_dashboard_layout('Faculty Reports', 'teacher', 'reports', 'faculty/report
     </article>
     <?php
 });
+
 

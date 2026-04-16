@@ -60,10 +60,11 @@ CREATE TABLE teachers (
     phone_number VARCHAR(20) DEFAULT NULL,
     profile_image_path VARCHAR(255) DEFAULT NULL,
     password_hash VARCHAR(255) NOT NULL,
-    status ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
+    status ENUM('pending', 'approved', 'rejected', 'archived') NOT NULL DEFAULT 'pending',
     registered_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     approved_at DATETIME DEFAULT NULL,
     rejected_at DATETIME DEFAULT NULL,
+    archived_at DATETIME DEFAULT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT NULL,
     CONSTRAINT fk_teachers_department FOREIGN KEY (department_id) REFERENCES departments(id)

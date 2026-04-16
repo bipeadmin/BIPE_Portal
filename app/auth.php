@@ -35,6 +35,10 @@ function teacher_login(string $teacherCode, string $password): string|bool
         return 'rejected';
     }
 
+    if ($teacher['status'] === 'archived') {
+        return 'archived';
+    }
+
     login_session([
         'role' => 'teacher',
         'id' => (int) $teacher['id'],

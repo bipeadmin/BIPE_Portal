@@ -24,9 +24,13 @@
     templateLink.href = url.toString();
   };
 
-  if (filterForm && templateLink) {
+  if (filterForm) {
+    const submitFilters = () => filterForm.requestSubmit();
     filterForm.querySelectorAll('select').forEach((field) => {
-      field.addEventListener('change', syncTemplateLink);
+      field.addEventListener('change', () => {
+        syncTemplateLink();
+        submitFilters();
+      });
     });
     syncTemplateLink();
   }

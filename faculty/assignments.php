@@ -224,6 +224,7 @@ render_dashboard_layout('Assignment Tracking', 'teacher', 'assignments', 'facult
                 </section>
 
                 <form method="post" class="stack assignment-entry-form">
+                    <?= csrf_field() ?>
                     <input type="hidden" name="action" value="save_assignment">
                     <input type="hidden" name="department_filter" value="<?= e($departmentQueryValue) ?>">
                     <input type="hidden" name="semester_no" value="<?= e((string) $semesterNo) ?>">
@@ -275,31 +276,36 @@ render_dashboard_layout('Assignment Tracking', 'teacher', 'assignments', 'facult
                 </div>
             </div>
             <?php if ($assignmentRows): ?>
-                <div class="table-wrap assignment-history-wrap">
-                    <table class="assignment-history-table">
-                        <thead>
-                        <tr>
-                            <th>Department</th>
-                            <th>Subject</th>
-                            <th>Assignment</th>
-                            <th>Submitted</th>
-                            <th>Tracked</th>
-                            <th>Due Date</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <?php foreach ($assignmentRows as $row): ?>
-                            <tr>
-                                <td data-label="Department"><?= e((string) ($row['department_name'] ?? '')) ?></td>
-                                <td data-label="Subject"><?= e((string) $row['subject_name']) ?></td>
-                                <td data-label="Assignment"><span class="badge info"><?= e((string) $row['assignment_label']) ?></span></td>
-                                <td data-label="Submitted"><?= e((string) $row['submitted_count']) ?></td>
-                                <td data-label="Tracked"><?= e((string) $row['tracked_count']) ?></td>
-                                <td data-label="Due Date"><?= e((string) ($row['due_date'] ?: '-')) ?></td>
-                            </tr>
-                        <?php endforeach; ?>
-                        </tbody>
-                    </table>
+                <div class="assignment-history-list">
+                    <?php foreach ($assignmentRows as $row): ?>
+                        <article class="assignment-history-item">
+                            <div class="assignment-history-top">
+                                <div>
+                                    <p class="eyebrow">Department</p>
+                                    <h4 class="assignment-history-title"><?= e((string) ($row['department_name'] ?? '')) ?></h4>
+                                </div>
+                                <span class="badge info assignment-history-badge"><?= e((string) $row['assignment_label']) ?></span>
+                            </div>
+                            <div class="assignment-history-subject-block">
+                                <p class="assignment-history-label">Subject</p>
+                                <p class="assignment-history-subject"><?= e((string) $row['subject_name']) ?></p>
+                            </div>
+                            <div class="assignment-history-meta">
+                                <div class="assignment-history-field">
+                                    <span class="assignment-history-label">Submitted</span>
+                                    <span class="assignment-history-metric"><?= e((string) $row['submitted_count']) ?></span>
+                                </div>
+                                <div class="assignment-history-field">
+                                    <span class="assignment-history-label">Tracked</span>
+                                    <span class="assignment-history-metric"><?= e((string) $row['tracked_count']) ?></span>
+                                </div>
+                                <div class="assignment-history-field assignment-history-field-wide">
+                                    <span class="assignment-history-label">Due Date</span>
+                                    <span class="assignment-history-time"><?= e((string) ($row['due_date'] ?: '-')) ?></span>
+                                </div>
+                            </div>
+                        </article>
+                    <?php endforeach; ?>
                 </div>
             <?php else: ?>
                 <div class="empty-state">No assignment tracker has been saved for this filter yet.</div>
@@ -308,4 +314,7 @@ render_dashboard_layout('Assignment Tracking', 'teacher', 'assignments', 'facult
     </section>
     <?php
 });
+
+
+
 

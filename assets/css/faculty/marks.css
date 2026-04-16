@@ -1,3 +1,14 @@
+@media (min-width: 961px) and (max-width: 1472px) {
+  .role-teacher .marks-entry-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .role-teacher .marks-sheet-table,
+  .role-teacher .marks-upload-list-table,
+  .role-teacher .marks-csv-issues-table {
+    table-layout: auto;
+  }
+}
 .role-teacher .marks-entry-grid {
   align-items: start;
 }
@@ -43,12 +54,13 @@
 
 .role-teacher .marks-sheet-table td,
 .role-teacher .marks-upload-list-table td {
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
+  word-break: normal;
 }
 
 .role-teacher .marks-sheet-table th:nth-child(1),
 .role-teacher .marks-sheet-table td:nth-child(1) {
-  width: 140px;
+  width: 168px;
 }
 
 .role-teacher .marks-sheet-table th:nth-child(3),
@@ -68,6 +80,17 @@
 
 .role-teacher .marks-name-cell {
   transition: color 0.2s ease;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: normal;
+  line-height: 1.45;
+}
+
+.role-teacher .marks-sheet-table td:nth-child(1),
+.role-teacher .marks-csv-issues-table td:nth-child(1) {
+  white-space: nowrap;
+  overflow-wrap: normal;
+  word-break: keep-all;
 }
 
 .role-teacher .marks-value-cell {
@@ -178,7 +201,7 @@
 
 .role-teacher .marks-csv-issues-table th:nth-child(1),
 .role-teacher .marks-csv-issues-table td:nth-child(1) {
-  width: 128px;
+  width: 156px;
 }
 
 .role-teacher .marks-csv-issues-table th:nth-child(3),
@@ -437,5 +460,7 @@
     width: 100%;
   }
 }
+
+
 
 

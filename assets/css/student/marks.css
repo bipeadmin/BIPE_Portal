@@ -198,3 +198,64 @@
   }
 }
 
+.role-student .student-marks-head {
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.role-student .student-marks-toolbar {
+  display: grid;
+  gap: 12px;
+  width: min(100%, 320px);
+}
+
+.role-student .student-marks-filter-form {
+  align-items: end;
+}
+
+.role-student .student-selected-mark-card-list {
+  display: none;
+  gap: 14px;
+}
+
+.role-student .student-selected-mark-table th:nth-child(2),
+.role-student .student-selected-mark-table td:nth-child(2),
+.role-student .student-selected-mark-table th:nth-child(3),
+.role-student .student-selected-mark-table td:nth-child(3),
+.role-student .student-selected-mark-table th:nth-child(4),
+.role-student .student-selected-mark-table td:nth-child(4),
+.role-student .student-selected-mark-table th:nth-child(5),
+.role-student .student-selected-mark-table td:nth-child(5),
+.role-student .student-selected-mark-table th:nth-child(6),
+.role-student .student-selected-mark-table td:nth-child(6) {
+  width: 120px;
+}
+
+.role-student .student-status-badge {
+  min-width: 92px;
+  justify-content: center;
+}
+
+@media (max-width: 920px) {
+  .role-student .student-marks-toolbar {
+    width: 100%;
+  }
+
+  .role-student .student-selected-mark-wrap {
+    display: none;
+  }
+
+  .role-student .student-selected-mark-card-list {
+    display: grid;
+  }
+}
+
+@media (max-width: 720px) {
+  .role-student .student-marks-head {
+    flex-direction: column;
+  }
+
+  .role-student .student-marks-filter-form .btn-primary {
+    width: 100%;
+  }
+}
