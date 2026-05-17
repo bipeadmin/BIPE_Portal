@@ -144,6 +144,11 @@ p {
   background: linear-gradient(135deg, rgba(37, 99, 235, 0.1), rgba(255, 255, 255, 0.94));
 }
 
+.flash-warning {
+  border-color: rgba(217, 119, 6, 0.22);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.14), rgba(255, 255, 255, 0.95));
+}
+
 .landing-shell {
   min-height: 100vh;
   display: grid;
@@ -774,6 +779,31 @@ p {
 .card-subtitle {
   color: var(--muted);
   font-size: 14px;
+}
+
+/* Hide low-priority helper commentary across the portal while keeping real warnings visible. */
+.card-subtitle,
+.form-note,
+.form-hint,
+.form-help,
+.hint-box,
+.file-hint,
+.page-footer-note,
+.auth-footer-note,
+.audit-log-intro,
+.report-filter-note,
+.request-category-note,
+.attendance-breakdown-note,
+.attendance-readonly-note,
+.faculty-records-readonly-note,
+.view-marks-notice,
+.summary-note,
+.table-note {
+  display: none !important;
+}
+
+.notice-box:not(.warning):not(.danger) {
+  display: none !important;
 }
 
 .stack {

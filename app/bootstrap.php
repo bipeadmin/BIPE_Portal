@@ -61,6 +61,7 @@ ensure_runtime_schema_support();
 
 apply_security_headers();
 enforce_session_timeout();
+enforce_single_session_integrity();
 
 if (is_post() && (bool) config('security.csrf_enabled', true)) {
     verify_csrf_request();

@@ -71,6 +71,11 @@
   width: 168px;
 }
 
+.role-admin .active-faculty-table th:nth-child(6),
+.role-admin .active-faculty-table td:nth-child(6) {
+  width: 248px;
+}
+
 .role-admin .faculty-rejected-table th:nth-child(1),
 .role-admin .faculty-rejected-table td:nth-child(1) {
   width: 112px;
@@ -98,7 +103,12 @@
 
 .role-admin .faculty-archived-table th:nth-child(6),
 .role-admin .faculty-archived-table td:nth-child(6) {
-  width: 120px;
+  width: 168px;
+}
+
+.role-admin .faculty-archived-table th:nth-child(7),
+.role-admin .faculty-archived-table td:nth-child(7) {
+  width: 180px;
 }
 
 @media (max-width: 1200px) {
@@ -187,7 +197,8 @@
     color: var(--muted);
   }
 
-  .role-admin .faculty-card-table td[data-label='Actions'] {
+  .role-admin .faculty-card-table td[data-label='Actions'],
+  .role-admin .faculty-card-table td[data-label='Action'] {
     grid-template-columns: 1fr;
     gap: 10px;
   }
@@ -238,7 +249,7 @@
   .role-admin .active-faculty-table thead tr,
   .role-admin .active-faculty-table tbody tr {
     display: grid;
-    grid-template-columns: minmax(52px, 0.72fr) minmax(0, 1fr) minmax(0, 0.95fr) minmax(0, 1.15fr);
+    grid-template-columns: minmax(52px, 0.72fr) minmax(0, 1fr) minmax(0, 0.95fr) minmax(0, 1.15fr) minmax(0, 0.95fr);
     gap: 8px;
   }
 
@@ -375,6 +386,10 @@
 
   .role-admin .active-faculty-table td[data-label='Email'] {
     grid-column: 2;
+  }
+
+  .role-admin .active-faculty-table td[data-label='Session'] {
+    grid-column: 1 / -1;
   }
 
   .role-admin .active-faculty-table td[data-label='Actions'] {

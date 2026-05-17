@@ -8,19 +8,67 @@
   margin-bottom: 14px;
 }
 
+.role-admin .report-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
 .role-admin .report-card-print-button,
+.role-admin .report-card-actions .btn-secondary,
 .role-admin .report-card-filters .btn-primary,
 .role-admin .report-card-print-link {
   white-space: nowrap;
 }
 
 .role-admin .report-card-table {
-  min-width: 780px;
+  min-width: 940px;
 }
 
 .role-admin .report-card-table td {
   overflow-wrap: anywhere;
   vertical-align: top;
+}
+
+.role-admin .report-card-table th {
+  white-space: nowrap;
+}
+
+.role-admin .report-card-table th:nth-child(1),
+.role-admin .report-card-table td:nth-child(1) {
+  width: 150px;
+}
+
+.role-admin .report-card-table th:nth-child(2),
+.role-admin .report-card-table td:nth-child(2) {
+  min-width: 190px;
+}
+
+.role-admin .report-card-table .subject-column-head,
+.role-admin .report-card-table .subject-score-cell {
+  min-width: 132px;
+  text-align: center;
+}
+
+.role-admin .report-card-table .subject-score-cell,
+.role-admin .report-card-table .total-marks-cell,
+.role-admin .report-card-table .action-cell {
+  white-space: nowrap;
+}
+
+.role-admin .report-card-table .subject-score-cell.is-empty {
+  color: var(--muted);
+}
+
+.role-admin .report-card-table .subject-score-cell.is-absent {
+  color: var(--warning);
+  font-weight: 600;
+}
+
+.role-admin .report-card-table .total-marks-cell {
+  text-align: center;
+  font-weight: 600;
 }
 
 .role-admin .report-card-table th:last-child,
@@ -34,7 +82,14 @@
     align-items: flex-start;
   }
 
+  .role-admin .report-card-actions {
+    width: 100%;
+    display: grid;
+    gap: 10px;
+  }
+
   .role-admin .report-card-print-button,
+  .role-admin .report-card-actions .btn-secondary,
   .role-admin .report-card-filters .btn-primary {
     width: 100%;
     justify-content: center;

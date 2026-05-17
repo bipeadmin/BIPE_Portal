@@ -54,10 +54,8 @@ if (is_post()) {
 }
 
 $summary = support_request_summary();
-$allRows = support_request_rows();
+$allRows = support_request_rows('request');
 $requestRows = array_values(array_filter($allRows, static fn (array $row): bool => ($row['category'] ?? '') === 'request'));
-$feedbackRows = array_values(array_filter($allRows, static fn (array $row): bool => ($row['category'] ?? '') === 'feedback'));
-$issueRows = array_values(array_filter($allRows, static fn (array $row): bool => ($row['category'] ?? '') === 'issue'));
 $mailtoLink = trim((string) ($_SESSION['support_request_mailto'] ?? ''));
 unset($_SESSION['support_request_mailto']);
 
@@ -74,7 +72,7 @@ $detailText = static function (array $row): string {
     };
 };
 
-$renderSection = static function (string $eyebrow, string $title, string $subtitle, array $rows, string $emptyMessage, callable $detailText): void {
+$renderSection = static function (string $eyebrow, string $title, string $subtitle, array $rows, string $emptyMessage) use ($detailText): void {
     ?>
     <article class="data-card request-section-card">
         <div class="card-head">
@@ -178,7 +176,7 @@ $renderSection = static function (string $eyebrow, string $title, string $subtit
     <?php
 };
 
-render_dashboard_layout('Request Approval / Feedback / Issues', 'admin', 'requests', 'admin/requests.css', 'admin/requests.js', function () use ($summary, $requestRows, $feedbackRows, $issueRows, $mailtoLink, $detailText, $renderSection): void {
+render_dashboard_layout('Request Approval', 'admin', 'requests', 'admin/requests.css', 'admin/requests.js', function () use ($summary, $requestRows, $mailtoLink, $renderSection): void {
     ?>
     <div class="request-admin-page"<?= $mailtoLink !== '' ? ' data-request-mailto="' . e($mailtoLink) . '"' : '' ?>>
         <section class="stats-grid request-stats-grid">
@@ -188,19 +186,19 @@ render_dashboard_layout('Request Approval / Feedback / Issues', 'admin', 'reques
                 <p class="stat-label">Account-related approvals waiting for the administrator</p>
             </article>
             <article class="stat-card">
-                <p class="eyebrow">Feedback Entries</p>
-                <h3 class="stat-value"><?= e((string) ($summary['feedback']['total'] ?? 0)) ?></h3>
-                <p class="stat-label">Feedback items currently available in the shared queue</p>
+                <p class="eyebrow">Approved Requests</p>
+                <h3 class="stat-value"><?= e((string) ($summary['request']['approved'] ?? 0)) ?></h3>
+                <p class="stat-label">Access requests already approved by an administrator</p>
             </article>
             <article class="stat-card">
-                <p class="eyebrow">Issue Tickets</p>
-                <h3 class="stat-value"><?= e((string) ($summary['issue']['total'] ?? 0)) ?></h3>
-                <p class="stat-label">Issue records captured for admin review and action</p>
+                <p class="eyebrow">Rejected Requests</p>
+                <h3 class="stat-value"><?= e((string) ($summary['request']['rejected'] ?? 0)) ?></h3>
+                <p class="stat-label">Access requests rejected after administrator review</p>
             </article>
             <article class="stat-card">
-                <p class="eyebrow">Reviewed Decisions</p>
-                <h3 class="stat-value"><?= e((string) (($summary['all']['approved'] ?? 0) + ($summary['all']['rejected'] ?? 0))) ?></h3>
-                <p class="stat-label">Requests, feedback, and issues already reviewed by an administrator</p>
+                <p class="eyebrow">Total Requests</p>
+                <h3 class="stat-value"><?= e((string) ($summary['request']['total'] ?? 0)) ?></h3>
+                <p class="stat-label">Faculty account recovery requests stored in the portal</p>
             </article>
         </section>
 
@@ -211,26 +209,7 @@ render_dashboard_layout('Request Approval / Feedback / Issues', 'admin', 'reques
             'Faculty access requests awaiting review',
             'See who submitted the request, when it arrived, and complete the approval or rejection directly from this queue.',
             $requestRows,
-            'No faculty access requests are waiting right now.',
-            $detailText
-        ); ?>
-
-        <?php $renderSection(
-            'Feedback Desk',
-            'Feedback records from connected portal workflows',
-            'This area will hold submitted feedback so the admin can review, approve, or reject each entry from one place.',
-            $feedbackRows,
-            'No feedback entries are available yet.',
-            $detailText
-        ); ?>
-
-        <?php $renderSection(
-            'Issues Desk',
-            'Issue reports queued for administrator action',
-            'Operational issues and portal complaints can be reviewed here without needing a separate approval screen.',
-            $issueRows,
-            'No issue reports are available yet.',
-            $detailText
+            'No faculty access requests are waiting right now.'
         ); ?>
     </div>
     <?php

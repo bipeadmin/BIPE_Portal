@@ -62,6 +62,19 @@ if (is_post()) {
             flash('success', 'Student record deleted successfully.');
         }
 
+        if ($action === 'reset_student_session') {
+            $studentId = (int) post('student_id');
+            $student = student_by_id($studentId);
+            if (!$student) {
+                throw new RuntimeException('Student record not found.');
+            }
+            $wasActive = reset_active_session('student', $studentId);
+            audit_log('admin', (string) (current_user()['username'] ?? 'admin'), 'SESSION_RESET', 'Student session reset for ' . (string) $student['enrollment_no']);
+            flash($wasActive ? 'success' : 'info', $wasActive
+                ? 'Student session reset successfully. The current device will be signed out on its next request.'
+                : 'No active student session was found to reset.');
+        }
+
         if ($action === 'delete_filtered_students') {
             $filteredStudents = student_directory_rows(
                 $redirectDepartmentId > 0 ? $redirectDepartmentId : null,
@@ -111,6 +124,7 @@ $yearLevel = (int) ($_GET['year_level'] ?? 0);
 $semesterNo = (int) ($_GET['semester_no'] ?? 0);
 $search = trim((string) ($_GET['search'] ?? ''));
 $students = student_directory_rows($departmentId > 0 ? $departmentId : null, $yearLevel > 0 ? $yearLevel : null, $semesterNo > 0 ? $semesterNo : null, $search);
+$studentSessionMap = active_session_rows_map('student', array_map(static fn (array $row): int => (int) $row['id'], $students));
 $studentCount = count($students);
 $deleteScopeLabelParts = [];
 
@@ -134,7 +148,7 @@ if ($search !== '') {
 
 $deleteScopeLabel = $deleteScopeLabelParts !== [] ? implode(' / ', $deleteScopeLabelParts) : 'All students';
 
-render_dashboard_layout('Student Management', 'admin', 'students', 'admin/students.css', 'admin/students.js', function () use ($departments, $departmentId, $yearLevel, $semesterNo, $search, $students, $studentCount, $deleteScopeLabel): void {
+render_dashboard_layout('Student Management', 'admin', 'students', 'admin/students.css', 'admin/students.js', function () use ($departments, $departmentId, $yearLevel, $semesterNo, $search, $students, $studentCount, $deleteScopeLabel, $studentSessionMap): void {
     ?>
     <section class="grid-2">
         <article class="data-card">
@@ -285,16 +299,16 @@ render_dashboard_layout('Student Management', 'admin', 'students', 'admin/studen
                         <th>Email</th>
                         <th>Mobile</th>
                         <th>Account</th>
+                        <th>Session</th>
                         <th>Action</th>
                     </tr>
                     </thead>
                     <tbody>
                     <?php foreach ($students as $student): ?>
+                        <?php $sessionRow = $studentSessionMap[(int) $student['id']] ?? null; ?>
                         <tr>
                             <td class="mono" data-label="Enrollment"><?= e($student['enrollment_no']) ?></td>
-                            <td class="student-name-cell" data-label="Student">
-                                <strong><?= e($student['full_name']) ?></strong>
-                            </td>
+                            <td class="student-name-cell" data-label="Student"><strong><?= e($student['full_name']) ?></strong></td>
                             <td data-label="Department"><?= e($student['department_name']) ?></td>
                             <td data-label="Year"><?= e(year_label((int) $student['year_level'])) ?></td>
                             <td data-label="Semester"><?= e(semester_label((int) $student['semester_no'])) ?></td>
@@ -307,17 +321,40 @@ render_dashboard_layout('Student Management', 'admin', 'students', 'admin/studen
                                     <span class="badge warning">Pending activation</span>
                                 <?php endif; ?>
                             </td>
+                            <td data-label="Session">
+                                <?php if ($sessionRow): ?>
+                                    <span class="badge success">Active Session</span>
+                                    <div class="muted" style="margin-top: 6px;"><?= e((string) ($sessionRow['login_ip'] ?? 'Unknown IP')) ?></div>
+                                    <div class="muted"><?= e((string) ($sessionRow['last_seen_at'] ?? '')) ?></div>
+                                <?php else: ?>
+                                    <span class="badge warning">Offline</span>
+                                <?php endif; ?>
+                            </td>
                             <td data-label="Action">
-                                <form method="post">
-                                    <?= csrf_field() ?>
-                                    <input type="hidden" name="action" value="delete_student">
-                                    <input type="hidden" name="student_id" value="<?= e((string) $student['id']) ?>">
-                                    <input type="hidden" name="filter_department_id" value="<?= e((string) $departmentId) ?>">
-                                    <input type="hidden" name="filter_year_level" value="<?= e((string) $yearLevel) ?>">
-                                    <input type="hidden" name="filter_semester_no" value="<?= e((string) $semesterNo) ?>">
-                                    <input type="hidden" name="filter_search" value="<?= e($search) ?>">
-                                    <button class="btn-danger" type="submit" data-confirm="Delete this student record?">Delete</button>
-                                </form>
+                                <div class="actions-cell">
+                                    <?php if ($sessionRow): ?>
+                                        <form method="post">
+                                            <?= csrf_field() ?>
+                                            <input type="hidden" name="action" value="reset_student_session">
+                                            <input type="hidden" name="student_id" value="<?= e((string) $student['id']) ?>">
+                                            <input type="hidden" name="filter_department_id" value="<?= e((string) $departmentId) ?>">
+                                            <input type="hidden" name="filter_year_level" value="<?= e((string) $yearLevel) ?>">
+                                            <input type="hidden" name="filter_semester_no" value="<?= e((string) $semesterNo) ?>">
+                                            <input type="hidden" name="filter_search" value="<?= e($search) ?>">
+                                            <button class="btn-secondary" type="submit" data-confirm="Reset this student session? The current device will be signed out on the next request.">Reset Session</button>
+                                        </form>
+                                    <?php endif; ?>
+                                    <form method="post">
+                                        <?= csrf_field() ?>
+                                        <input type="hidden" name="action" value="delete_student">
+                                        <input type="hidden" name="student_id" value="<?= e((string) $student['id']) ?>">
+                                        <input type="hidden" name="filter_department_id" value="<?= e((string) $departmentId) ?>">
+                                        <input type="hidden" name="filter_year_level" value="<?= e((string) $yearLevel) ?>">
+                                        <input type="hidden" name="filter_semester_no" value="<?= e((string) $semesterNo) ?>">
+                                        <input type="hidden" name="filter_search" value="<?= e($search) ?>">
+                                        <button class="btn-danger" type="submit" data-confirm="Delete this student record?">Delete</button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                     <?php endforeach; ?>

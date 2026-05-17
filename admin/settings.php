@@ -73,6 +73,22 @@ if (is_post()) {
             flash('success', 'All department-semester sections unlocked.');
         }
 
+        if ($action === 'reset_admin_session') {
+            $targetAdminId = (int) post('admin_id');
+            $targetAdmin = admin_by_id($targetAdminId);
+            if (!$targetAdmin) {
+                throw new RuntimeException('Administrator account not found.');
+            }
+            if ($targetAdminId === (int) $admin['id']) {
+                throw new RuntimeException('This administrator session is already the current one. Use Logout from this browser if you want to close it.');
+            }
+            $wasActive = reset_active_session('admin', $targetAdminId);
+            audit_log('admin', (string) (current_user()['username'] ?? 'admin'), 'SESSION_RESET', 'Administrator session reset for ' . (string) $targetAdmin['username']);
+            flash($wasActive ? 'success' : 'info', $wasActive
+                ? 'Administrator session reset successfully. The other device will be signed out on its next request.'
+                : 'No active administrator session was found to reset.');
+        }
+
         if ($action === 'reset_portal') {
             if (trim((string) post('reset_phrase')) !== 'RESET') {
                 throw new RuntimeException('Type RESET exactly before running the full portal reset.');
@@ -96,8 +112,10 @@ $profileImageUrl = profile_image_url($admin['profile_image_path'] ?? null);
 $markTypes = mark_type_rows();
 $lockedKeys = array_flip(locked_mark_keys());
 $departments = departments();
+$adminRows = query_all('SELECT id, full_name, username, email FROM admins ORDER BY full_name ASC');
+$adminSessionMap = active_session_rows_map('admin', array_map(static fn (array $row): int => (int) $row['id'], $adminRows));
 
-render_dashboard_layout('Portal Settings', 'admin', 'settings', 'admin/settings.css', 'admin/settings.js', function () use ($admin, $profileImageUrl, $markTypes, $lockedKeys, $departments): void {
+render_dashboard_layout('Portal Settings', 'admin', 'settings', 'admin/settings.css', 'admin/settings.js', function () use ($admin, $profileImageUrl, $markTypes, $lockedKeys, $departments, $adminRows, $adminSessionMap): void {
     ?>
     <section class="grid-2 admin-profile-grid">
         <article class="data-card admin-profile-card">
@@ -203,6 +221,63 @@ render_dashboard_layout('Portal Settings', 'admin', 'settings', 'admin/settings.
                 </div>
                 <button class="btn-primary" type="submit">Create New Academic Year</button>
             </form>
+        </article>
+    </section>
+
+    <section class="grid-2">
+        <article class="data-card">
+            <div class="card-head">
+                <div>
+                    <p class="eyebrow">Administrator Sessions</p>
+                    <h3 class="card-title">Reset another admin's active device if needed</h3>
+                </div>
+            </div>
+            <div class="table-wrap settings-admin-sessions-wrap">
+                <table class="settings-admin-sessions-table" data-stack-mobile="true">
+                    <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Session</th>
+                        <th>Action</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <?php foreach ($adminRows as $adminRow): ?>
+                        <?php $sessionRow = $adminSessionMap[(int) $adminRow['id']] ?? null; ?>
+                        <tr>
+                            <td data-label="Name"><?= e($adminRow['full_name']) ?></td>
+                            <td class="mono" data-label="Username"><?= e($adminRow['username']) ?></td>
+                            <td data-label="Email"><?= e($adminRow['email']) ?></td>
+                            <td data-label="Session">
+                                <?php if ($sessionRow): ?>
+                                    <span class="badge success"><?= (int) $adminRow['id'] === (int) $admin['id'] ? 'Current Session' : 'Active Session' ?></span>
+                                    <div class="muted" style="margin-top: 6px;"><?= e((string) ($sessionRow['login_ip'] ?? 'Unknown IP')) ?></div>
+                                    <div class="muted"><?= e((string) ($sessionRow['last_seen_at'] ?? '')) ?></div>
+                                <?php else: ?>
+                                    <span class="badge warning">Offline</span>
+                                <?php endif; ?>
+                            </td>
+                            <td data-label="Action">
+                                <?php if ((int) $adminRow['id'] === (int) $admin['id']): ?>
+                                    <span class="muted">Current browser</span>
+                                <?php elseif ($sessionRow): ?>
+                                    <form method="post">
+                                        <?= csrf_field() ?>
+                                        <input type="hidden" name="action" value="reset_admin_session">
+                                        <input type="hidden" name="admin_id" value="<?= e((string) $adminRow['id']) ?>">
+                                        <button class="btn-secondary" type="submit" data-confirm="Reset this administrator session? The other device will be signed out on the next request.">Reset Session</button>
+                                    </form>
+                                <?php else: ?>
+                                    <span class="muted">No active session</span>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
         </article>
     </section>
 

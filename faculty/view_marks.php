@@ -179,7 +179,8 @@ render_dashboard_layout('View Marks', 'teacher', 'view_marks', 'faculty/view_mar
                     </tr>
                     </thead>
                     <tbody>
-                    <?php foreach ($students as $student):
+                    <?php foreach ($students as $student): ?>
+                        <?php
                         $entry = $recordsMap[(int) $student['id']] ?? null;
                         $isAbsent = $entry && (int) ($entry['is_absent'] ?? 0) === 1;
                         $marks = $entry['marks_obtained'] ?? null;

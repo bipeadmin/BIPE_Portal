@@ -27,6 +27,17 @@ if (is_post()) {
             audit_log('admin', (string) (current_user()['username'] ?? 'admin'), 'FACULTY_ARCHIVED', 'Teacher ID ' . $teacherId);
             flash('success', 'Faculty profile removed from the active panel. Existing attendance, marks, assignments, and audit history are preserved.');
         }
+        if ($action === 'reset_teacher_session' && $teacherId > 0) {
+            $teacher = teacher_by_id($teacherId);
+            if (!$teacher) {
+                throw new RuntimeException('Faculty account not found.');
+            }
+            $wasActive = reset_active_session('teacher', $teacherId);
+            audit_log('admin', (string) (current_user()['username'] ?? 'admin'), 'SESSION_RESET', 'Faculty session reset for ' . (string) $teacher['teacher_code']);
+            flash($wasActive ? 'success' : 'info', $wasActive
+                ? 'Faculty session reset successfully. The current device will be signed out on its next request.'
+                : 'No active faculty session was found to reset.');
+        }
         if ($action === 'restore' && $teacherId > 0) {
             restore_teacher_account($teacherId);
             audit_log('admin', (string) (current_user()['username'] ?? 'admin'), 'FACULTY_RESTORED', 'Teacher ID ' . $teacherId);
@@ -67,8 +78,10 @@ if (is_post()) {
 
 $groups = faculty_groups();
 $editingTeacher = $editId > 0 ? teacher_by_id($editId) : null;
+$approvedSessionMap = active_session_rows_map('teacher', array_map(static fn (array $row): int => (int) $row['id'], $groups['approved']));
+$archivedSessionMap = active_session_rows_map('teacher', array_map(static fn (array $row): int => (int) $row['id'], $groups['archived']));
 
-render_dashboard_layout('Faculty Approval & Records', 'admin', 'faculty', 'admin/faculty.css', 'admin/faculty.js', function () use ($groups, $editingTeacher, $departments): void {
+render_dashboard_layout('Faculty Approval & Records', 'admin', 'faculty', 'admin/faculty.css', 'admin/faculty.js', function () use ($groups, $editingTeacher, $departments, $approvedSessionMap, $archivedSessionMap): void {
     ?>
     <section class="stats-grid">
         <article class="stat-card">
@@ -173,11 +186,13 @@ render_dashboard_layout('Faculty Approval & Records', 'admin', 'faculty', 'admin
                                 <div class="actions-cell">
                                     <a class="btn-secondary" href="<?= e(url('admin/faculty.php?edit_id=' . $teacher['id'])) ?>">Edit</a>
                                     <form method="post">
+                                        <?= csrf_field() ?>
                                         <input type="hidden" name="action" value="approve">
                                         <input type="hidden" name="teacher_id" value="<?= e((string) $teacher['id']) ?>">
                                         <button class="btn-primary" type="submit">Approve</button>
                                     </form>
                                     <form method="post">
+                                        <?= csrf_field() ?>
                                         <input type="hidden" name="action" value="reject">
                                         <input type="hidden" name="teacher_id" value="<?= e((string) $teacher['id']) ?>">
                                         <button class="btn-danger" type="submit">Reject</button>
@@ -211,20 +226,40 @@ render_dashboard_layout('Faculty Approval & Records', 'admin', 'faculty', 'admin
                             <th>Name</th>
                             <th>Department</th>
                             <th>Email</th>
+                            <th>Session</th>
                             <th>Actions</th>
                         </tr>
                         </thead>
                         <tbody>
                         <?php foreach ($groups['approved'] as $teacher): ?>
+                            <?php $sessionRow = $approvedSessionMap[(int) $teacher['id']] ?? null; ?>
                             <tr>
                                 <td class="mono" data-label="Faculty ID"><?= e($teacher['teacher_code']) ?></td>
                                 <td data-label="Name"><?= e($teacher['full_name']) ?></td>
                                 <td data-label="Department"><?= e($teacher['department_name']) ?></td>
                                 <td class="faculty-email-cell" data-label="Email"><?= e($teacher['email']) ?></td>
+                                <td data-label="Session">
+                                    <?php if ($sessionRow): ?>
+                                        <span class="badge success">Active Session</span>
+                                        <div class="muted" style="margin-top: 6px;"><?= e((string) ($sessionRow['login_ip'] ?? 'Unknown IP')) ?></div>
+                                        <div class="muted"><?= e((string) ($sessionRow['last_seen_at'] ?? '')) ?></div>
+                                    <?php else: ?>
+                                        <span class="badge warning">Offline</span>
+                                    <?php endif; ?>
+                                </td>
                                 <td data-label="Actions">
                                     <div class="actions-cell">
                                         <a class="btn-secondary" href="<?= e(url('admin/faculty.php?edit_id=' . $teacher['id'])) ?>">Edit</a>
+                                        <?php if ($sessionRow): ?>
+                                            <form method="post">
+                                                <?= csrf_field() ?>
+                                                <input type="hidden" name="action" value="reset_teacher_session">
+                                                <input type="hidden" name="teacher_id" value="<?= e((string) $teacher['id']) ?>">
+                                                <button class="btn-secondary" type="submit" data-confirm="Reset this faculty session? The current device will be signed out on the next request.">Reset Session</button>
+                                            </form>
+                                        <?php endif; ?>
                                         <form method="post">
+                                            <?= csrf_field() ?>
                                             <input type="hidden" name="action" value="archive">
                                             <input type="hidden" name="teacher_id" value="<?= e((string) $teacher['id']) ?>">
                                             <button class="btn-danger" type="submit" data-confirm="Remove this faculty account from the active panel? Attendance, marks, assignments, and audit history will stay available.">Remove</button>
@@ -258,20 +293,39 @@ render_dashboard_layout('Faculty Approval & Records', 'admin', 'faculty', 'admin
                             <th>Department</th>
                             <th>Email</th>
                             <th>Archived</th>
+                            <th>Session</th>
                             <th>Action</th>
                         </tr>
                         </thead>
                         <tbody>
                         <?php foreach ($groups['archived'] as $teacher): ?>
+                            <?php $sessionRow = $archivedSessionMap[(int) $teacher['id']] ?? null; ?>
                             <tr>
                                 <td class="mono" data-label="Faculty ID"><?= e($teacher['teacher_code']) ?></td>
                                 <td data-label="Name"><?= e($teacher['full_name']) ?></td>
                                 <td data-label="Department"><?= e($teacher['department_name']) ?></td>
                                 <td class="faculty-email-cell" data-label="Email"><?= e($teacher['email']) ?></td>
                                 <td data-label="Archived"><?= e((string) ($teacher['archived_at'] ?? '-')) ?></td>
+                                <td data-label="Session">
+                                    <?php if ($sessionRow): ?>
+                                        <span class="badge success">Active Session</span>
+                                        <div class="muted" style="margin-top: 6px;"><?= e((string) ($sessionRow['login_ip'] ?? 'Unknown IP')) ?></div>
+                                    <?php else: ?>
+                                        <span class="badge warning">Offline</span>
+                                    <?php endif; ?>
+                                </td>
                                 <td data-label="Action">
                                     <div class="actions-cell">
+                                        <?php if ($sessionRow): ?>
+                                            <form method="post">
+                                                <?= csrf_field() ?>
+                                                <input type="hidden" name="action" value="reset_teacher_session">
+                                                <input type="hidden" name="teacher_id" value="<?= e((string) $teacher['id']) ?>">
+                                                <button class="btn-secondary" type="submit" data-confirm="Reset this faculty session? The current device will be signed out on the next request.">Reset Session</button>
+                                            </form>
+                                        <?php endif; ?>
                                         <form method="post">
+                                            <?= csrf_field() ?>
                                             <input type="hidden" name="action" value="restore">
                                             <input type="hidden" name="teacher_id" value="<?= e((string) $teacher['id']) ?>">
                                             <button class="btn-primary" type="submit">Restore</button>

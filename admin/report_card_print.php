@@ -6,19 +6,21 @@ require_role('admin');
 
 $departmentId = (int) ($_GET['department_id'] ?? 0);
 $semesterNo = (int) ($_GET['semester_no'] ?? 0);
+$markTypeId = (int) ($_GET['mark_type_id'] ?? 0);
 $studentId = isset($_GET['student_id']) ? (int) $_GET['student_id'] : null;
-$payloads = $departmentId > 0 && $semesterNo > 0 ? class_report_card_payloads($departmentId, $semesterNo, $studentId) : [];
+$payloads = $departmentId > 0 && $semesterNo > 0 ? class_report_card_payloads($departmentId, $semesterNo, $studentId, $markTypeId > 0 ? $markTypeId : null) : [];
 $department = $departmentId > 0 ? department_by_id($departmentId) : null;
+$selectedMarkType = $markTypeId > 0 ? mark_type_by_id($markTypeId) : null;
 $year = current_academic_year();
 if ($payloads) {
-    audit_log('admin', (string) (current_user()['username'] ?? 'admin'), 'REPORT_CARD', $studentId ? 'Student ' . $studentId : 'Department ' . $departmentId . ' semester ' . $semesterNo);
+    audit_log('admin', (string) (current_user()['username'] ?? 'admin'), 'REPORT_CARD', ($studentId ? 'Student ' . $studentId : 'Department ' . $departmentId . ' semester ' . $semesterNo) . ($selectedMarkType ? ' / ' . (string) $selectedMarkType['label'] : ''));
 }
 
 render_head('Printable Report Cards', 'admin/report_card_print.css', 'print-body');
 ?>
 <main class="print-shell">
     <div class="print-toolbar no-print">
-        <a class="btn-secondary" href="<?= e(url('admin/report_cards.php?department_id=' . $departmentId . '&semester_no=' . $semesterNo)) ?>">Back</a>
+        <a class="btn-secondary" href="<?= e(url('admin/report_cards.php?department_id=' . $departmentId . '&semester_no=' . $semesterNo . ($markTypeId > 0 ? '&mark_type_id=' . $markTypeId : ''))) ?>">Back</a>
         <button class="btn-primary" type="button" onclick="window.print()">Print / Save as PDF</button>
     </div>
 
@@ -40,6 +42,9 @@ render_head('Printable Report Cards', 'admin/report_card_print.css', 'print-body
                         <div><strong>Academic Year:</strong> <?= e((string) ($year['label'] ?? '-')) ?></div>
                         <div><strong>Department:</strong> <?= e((string) ($department['name'] ?? '-')) ?></div>
                         <div><strong>Semester:</strong> <?= e(semester_label($semesterNo)) ?></div>
+                        <?php if ($selectedMarkType): ?>
+                            <div><strong>Assessment:</strong> <?= e((string) $selectedMarkType['label']) ?></div>
+                        <?php endif; ?>
                     </div>
                 </header>
 
@@ -66,19 +71,19 @@ render_head('Printable Report Cards', 'admin/report_card_print.css', 'print-body
                         <tbody>
                         <?php foreach ($payload['rows'] as $row): ?>
                             <tr>
-                                <td><?= e($row['subject_name']) ?></td>
+                                <td title="<?= e((string) ($row['subject_name'] ?? '')) ?>"><?= e((string) ($row['subject_short_name'] ?? subject_short_label($row))) ?></td>
                                 <?php foreach ($row['marks'] as $mark): ?>
                                     <td class="<?= $mark['display'] === 'AB' ? 'is-absent' : '' ?>"><?= e((string) $mark['display']) ?></td>
                                 <?php endforeach; ?>
-                                <td><?= e((string) $row['total']) ?></td>
-                                <td><?= e((string) $row['max']) ?></td>
+                                <td><?= e(format_marks_value((float) $row['total'])) ?></td>
+                                <td><?= e(format_marks_value((float) $row['max'])) ?></td>
                                 <td><?= e($row['grade']) ?></td>
                             </tr>
                         <?php endforeach; ?>
                         <tr class="grand-row">
                             <td colspan="<?= e((string) (count($payload['mark_types']) + 1)) ?>">Grand Total</td>
-                            <td><?= e((string) $payload['grand_total']) ?></td>
-                            <td><?= e((string) $payload['grand_max']) ?></td>
+                            <td><?= e(format_marks_value((float) $payload['grand_total'])) ?></td>
+                            <td><?= e(format_marks_value((float) $payload['grand_max'])) ?></td>
                             <td><?= e($payload['grand_grade']) ?></td>
                         </tr>
                         </tbody>

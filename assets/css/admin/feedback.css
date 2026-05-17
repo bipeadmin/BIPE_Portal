@@ -1,0 +1,85 @@
+.role-admin .feedback-admin-stats,
+.role-admin .feedback-admin-card,
+.role-admin .feedback-admin-list,
+.role-admin .feedback-admin-item {
+  min-width: 0;
+}
+
+.role-admin .feedback-admin-list {
+  display: grid;
+  gap: 14px;
+  max-height: clamp(460px, 68vh, 820px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding-right: 4px;
+}
+
+.role-admin .feedback-admin-item {
+  border: 1px solid rgba(30, 64, 175, 0.12);
+  border-radius: 18px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: var(--shadow-sm);
+}
+
+.role-admin .feedback-admin-item-head {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(30, 64, 175, 0.08);
+}
+
+.role-admin .feedback-admin-item-head h4 {
+  margin: 8px 0 0;
+  font-size: 18px;
+  overflow-wrap: anywhere;
+}
+
+.role-admin .feedback-admin-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.role-admin .feedback-admin-grid p,
+.role-admin .feedback-admin-message,
+.role-admin .feedback-admin-response p {
+  overflow-wrap: anywhere;
+}
+
+.role-admin .feedback-admin-response-form,
+.role-admin .feedback-admin-response {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(30, 64, 175, 0.08);
+}
+
+.role-admin .feedback-admin-response-form .inline-actions {
+  justify-content: flex-start;
+}
+
+@media (max-width: 720px) {
+  .role-admin .feedback-admin-list {
+    max-height: min(70vh, 680px);
+    padding-right: 0;
+  }
+
+  .role-admin .feedback-admin-item {
+    padding: 14px;
+  }
+
+  .role-admin .feedback-admin-item-head,
+  .role-admin .feedback-admin-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .role-admin .feedback-admin-response-form .inline-actions,
+  .role-admin .feedback-admin-response-form .inline-actions button {
+    width: 100%;
+  }
+}

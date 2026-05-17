@@ -311,9 +311,10 @@ function student_directory_rows(?int $departmentId = null, ?int $yearLevel = nul
     return query_all($sql, $params);
 }
 
-function add_or_update_subject(string $subjectCode, string $subjectName, int $departmentId, int $semesterNo): string
+function add_or_update_subject(string $subjectCode, string $subjectShortName, string $subjectName, int $departmentId, int $semesterNo): string
 {
     $subjectCode = strtoupper(trim($subjectCode));
+    $subjectShortName = strtoupper(trim((string) preg_replace('/\s+/', ' ', $subjectShortName)));
     $subjectName = trim((string) preg_replace('/\s+/', ' ', $subjectName));
 
     if ($departmentId <= 0) {
@@ -325,9 +326,15 @@ function add_or_update_subject(string $subjectCode, string $subjectName, int $de
     if ($subjectCode === '' || $subjectName === '') {
         throw new RuntimeException('Subject code and subject name are both required.');
     }
+    if ($subjectShortName === '') {
+        $subjectShortName = subject_short_label([
+            'subject_code' => $subjectCode,
+            'subject_name' => $subjectName,
+        ]);
+    }
 
     $matches = query_all(
-        'SELECT id, subject_code, subject_name
+        'SELECT id, subject_code, subject_short_name, subject_name
          FROM subjects
          WHERE department_id = :department_id AND semester_no = :semester_no
            AND (subject_code = :subject_code OR subject_name = :subject_name)',
@@ -348,10 +355,12 @@ function add_or_update_subject(string $subjectCode, string $subjectName, int $de
         execute_sql(
             'UPDATE subjects
              SET subject_code = :subject_code,
+                 subject_short_name = :subject_short_name,
                  subject_name = :subject_name
              WHERE id = :id',
             [
                 'subject_code' => $subjectCode,
+                'subject_short_name' => $subjectShortName,
                 'subject_name' => $subjectName,
                 'id' => $matchedIds[0],
             ]
@@ -361,12 +370,13 @@ function add_or_update_subject(string $subjectCode, string $subjectName, int $de
     }
 
     execute_sql(
-        'INSERT INTO subjects (department_id, semester_no, subject_code, subject_name)
-         VALUES (:department_id, :semester_no, :subject_code, :subject_name)',
+        'INSERT INTO subjects (department_id, semester_no, subject_code, subject_short_name, subject_name)
+         VALUES (:department_id, :semester_no, :subject_code, :subject_short_name, :subject_name)',
         [
             'department_id' => $departmentId,
             'semester_no' => $semesterNo,
             'subject_code' => $subjectCode,
+            'subject_short_name' => $subjectShortName,
             'subject_name' => $subjectName,
         ]
     );
@@ -430,6 +440,14 @@ function bulk_import_subjects_csv(string $tmpName, int $departmentId, int $yearL
         $mapped[$target] = $found;
     }
 
+    $subjectShortNameIndex = null;
+    foreach (['subject short name', 'short name', 'short_name', 'subject_short_name'] as $choice) {
+        if (array_key_exists($choice, $normalized)) {
+            $subjectShortNameIndex = $normalized[$choice];
+            break;
+        }
+    }
+
     $inserted = 0;
     $updated = 0;
 
@@ -441,6 +459,7 @@ function bulk_import_subjects_csv(string $tmpName, int $departmentId, int $yearL
             }
 
             $subjectCode = trim((string) ($row[$mapped['subject code']] ?? ''));
+            $subjectShortName = $subjectShortNameIndex !== null ? trim((string) ($row[$subjectShortNameIndex] ?? '')) : '';
             $subjectName = trim((string) ($row[$mapped['subject name']] ?? ''));
             if ($subjectCode === '' && $subjectName === '') {
                 continue;
@@ -449,7 +468,7 @@ function bulk_import_subjects_csv(string $tmpName, int $departmentId, int $yearL
                 throw new RuntimeException('Each CSV row must include both subject code and subject name.');
             }
 
-            $result = add_or_update_subject($subjectCode, $subjectName, $departmentId, $semesterNo);
+            $result = add_or_update_subject($subjectCode, $subjectShortName, $subjectName, $departmentId, $semesterNo);
             if ($result === 'inserted') {
                 $inserted++;
             } else {
@@ -533,6 +552,7 @@ function subject_directory_rows(?int $departmentId = null, ?int $yearLevel = nul
     if (trim($search) !== '') {
         $sql .= ' AND (
             s.subject_code LIKE :search OR
+            COALESCE(s.subject_short_name, "") LIKE :search OR
             s.subject_name LIKE :search OR
             d.name LIKE :search OR
             d.short_name LIKE :search
@@ -641,6 +661,7 @@ function support_request_type_label(?string $requestType): string
         'forgot_faculty_id' => 'Forgot Faculty ID',
         'feedback' => 'Feedback',
         'issue' => 'Issue',
+        'query' => 'Query',
         default => trim((string) $requestType) !== ''
             ? ucwords(str_replace(['_', '-'], ' ', (string) $requestType))
             : 'General Request',
@@ -654,6 +675,22 @@ function support_request_status_label(string $status): string
         'rejected' => 'Rejected',
         default => 'Pending',
     };
+}
+
+function support_request_workflow_status_label(array $request): string
+{
+    $category = (string) ($request['category'] ?? 'request');
+    $status = (string) ($request['status'] ?? 'pending');
+
+    if (in_array($category, ['feedback', 'issue'], true)) {
+        return match ($status) {
+            'approved' => 'Responded',
+            'rejected' => 'Closed',
+            default => 'Pending',
+        };
+    }
+
+    return support_request_status_label($status);
 }
 
 function support_request_status_tone(string $status): string
@@ -756,6 +793,83 @@ function support_request_pending_count(?array $categories = null): int
     return (int) query_value($sql, $params);
 }
 
+function support_request_unseen_response_count(string $requesterRole, int $requesterId): int
+{
+    $requesterRole = strtolower(trim($requesterRole));
+    if (!in_array($requesterRole, ['teacher', 'student'], true) || $requesterId <= 0) {
+        return 0;
+    }
+
+    return (int) query_value(
+        'SELECT COUNT(*)
+         FROM support_requests
+         WHERE requester_role = :requester_role
+           AND requester_id = :requester_id
+           AND category IN ("feedback", "issue")
+           AND status != "pending"
+           AND requester_seen_at IS NULL',
+        ['requester_role' => $requesterRole, 'requester_id' => $requesterId]
+    );
+}
+
+function support_request_sender_rows(string $requesterRole, int $requesterId): array
+{
+    $requesterRole = strtolower(trim($requesterRole));
+    if (!in_array($requesterRole, ['teacher', 'student'], true) || $requesterId <= 0) {
+        return [];
+    }
+
+    return query_all(
+        'SELECT sr.*, a.full_name AS reviewed_by_name
+         FROM support_requests sr
+         LEFT JOIN admins a ON a.id = sr.reviewed_by_admin_id
+         WHERE sr.requester_role = :requester_role
+           AND sr.requester_id = :requester_id
+           AND sr.category IN ("feedback", "issue")
+         ORDER BY sr.created_at DESC, sr.id DESC',
+        ['requester_role' => $requesterRole, 'requester_id' => $requesterId]
+    );
+}
+
+function support_request_unseen_response_rows(string $requesterRole, int $requesterId): array
+{
+    return array_values(array_filter(
+        support_request_sender_rows($requesterRole, $requesterId),
+        static fn (array $row): bool => ($row['status'] ?? 'pending') !== 'pending' && empty($row['requester_seen_at'])
+    ));
+}
+
+function mark_support_request_responses_seen(string $requesterRole, int $requesterId): void
+{
+    $requesterRole = strtolower(trim($requesterRole));
+    if (!in_array($requesterRole, ['teacher', 'student'], true) || $requesterId <= 0) {
+        return;
+    }
+
+    execute_sql(
+        'UPDATE support_requests
+         SET requester_seen_at = NOW()
+         WHERE requester_role = :requester_role
+           AND requester_id = :requester_id
+           AND category IN ("feedback", "issue")
+           AND status != "pending"
+           AND requester_seen_at IS NULL',
+        ['requester_role' => $requesterRole, 'requester_id' => $requesterId]
+    );
+}
+
+function support_feedback_response_text(array $request): string
+{
+    $response = trim((string) ($request['admin_response'] ?? ''));
+    if ($response !== '') {
+        return $response;
+    }
+
+    return (string) ($request['status'] ?? 'pending') === 'approved'
+        ? 'Admin has reviewed your message and marked it as responded.'
+        : 'Admin has reviewed and closed this message.';
+}
+
 function create_support_request(
     string $category,
     string $requestType,
@@ -766,7 +880,11 @@ function create_support_request(
     ?string $requesterEmail = null,
     ?string $subjectLine = null,
     ?string $messageBody = null,
-    ?string $requestedPasswordHash = null
+    ?string $requestedPasswordHash = null,
+    ?string $targetRole = null,
+    ?int $targetId = null,
+    ?string $targetName = null,
+    ?string $targetIdentifier = null
 ): array {
     $category = strtolower(trim($category));
     $requestType = strtolower(trim($requestType));
@@ -777,6 +895,9 @@ function create_support_request(
     $subjectLine = trim((string) $subjectLine) !== '' ? trim((string) $subjectLine) : null;
     $messageBody = trim((string) $messageBody) !== '' ? trim((string) $messageBody) : null;
     $requestedPasswordHash = trim((string) $requestedPasswordHash) !== '' ? trim((string) $requestedPasswordHash) : null;
+    $targetRole = trim((string) $targetRole) !== '' ? strtolower(trim((string) $targetRole)) : null;
+    $targetName = trim((string) $targetName) !== '' ? trim((string) $targetName) : null;
+    $targetIdentifier = trim((string) $targetIdentifier) !== '' ? trim((string) $targetIdentifier) : null;
 
     if (!in_array($category, ['request', 'feedback', 'issue'], true)) {
         throw new RuntimeException('Unsupported support request category.');
@@ -790,8 +911,11 @@ function create_support_request(
     if ($requesterName === '' || $requesterIdentifier === '') {
         throw new RuntimeException('Requester details are incomplete.');
     }
+    if ($targetRole !== null && !in_array($targetRole, ['admin', 'teacher', 'student'], true)) {
+        throw new RuntimeException('Choose a valid message recipient.');
+    }
 
-    $existingId = (int) (query_value(
+    $existingId = $category === 'request' ? (int) (query_value(
         'SELECT id
          FROM support_requests
          WHERE category = :category
@@ -807,7 +931,7 @@ function create_support_request(
             'requester_role' => $requesterRole,
             'requester_identifier' => $requesterIdentifier,
         ]
-    ) ?: 0);
+    ) ?: 0) : 0;
 
     if ($existingId > 0) {
         execute_sql(
@@ -815,11 +939,17 @@ function create_support_request(
              SET requester_id = :requester_id,
                  requester_name = :requester_name,
                  requester_email = :requester_email,
+                 target_role = :target_role,
+                 target_id = :target_id,
+                 target_name = :target_name,
+                 target_identifier = :target_identifier,
                  subject_line = :subject_line,
                  message_body = :message_body,
                  requested_password_hash = :requested_password_hash,
+                 admin_response = NULL,
                  reviewed_by_admin_id = NULL,
                  reviewed_at = NULL,
+                 requester_seen_at = NULL,
                  status = "pending",
                  created_at = NOW(),
                  updated_at = NOW()
@@ -828,6 +958,10 @@ function create_support_request(
                 'requester_id' => $requesterId,
                 'requester_name' => $requesterName,
                 'requester_email' => $requesterEmail,
+                'target_role' => $targetRole,
+                'target_id' => $targetId,
+                'target_name' => $targetName,
+                'target_identifier' => $targetIdentifier,
                 'subject_line' => $subjectLine,
                 'message_body' => $messageBody,
                 'requested_password_hash' => $requestedPasswordHash,
@@ -847,6 +981,10 @@ function create_support_request(
             requester_name,
             requester_identifier,
             requester_email,
+            target_role,
+            target_id,
+            target_name,
+            target_identifier,
             subject_line,
             message_body,
             requested_password_hash
@@ -858,6 +996,10 @@ function create_support_request(
             :requester_name,
             :requester_identifier,
             :requester_email,
+            :target_role,
+            :target_id,
+            :target_name,
+            :target_identifier,
             :subject_line,
             :message_body,
             :requested_password_hash
@@ -870,6 +1012,10 @@ function create_support_request(
             'requester_name' => $requesterName,
             'requester_identifier' => $requesterIdentifier,
             'requester_email' => $requesterEmail,
+            'target_role' => $targetRole,
+            'target_id' => $targetId,
+            'target_name' => $targetName,
+            'target_identifier' => $targetIdentifier,
             'subject_line' => $subjectLine,
             'message_body' => $messageBody,
             'requested_password_hash' => $requestedPasswordHash,
@@ -924,6 +1070,128 @@ function create_teacher_access_request(string $teacherCode, string $requestType,
     );
 }
 
+function support_feedback_target_options(string $requesterRole, int $requesterId): array
+{
+    $requesterRole = strtolower(trim($requesterRole));
+    $options = [];
+
+    foreach (query_all('SELECT id, full_name, username FROM admins ORDER BY full_name ASC') as $admin) {
+        $options[] = [
+            'role' => 'admin',
+            'id' => (int) $admin['id'],
+            'name' => (string) $admin['full_name'],
+            'identifier' => (string) $admin['username'],
+            'label' => 'Admin - ' . (string) $admin['full_name'] . ' (' . (string) $admin['username'] . ')',
+        ];
+    }
+
+    if ($requesterRole === 'teacher') {
+        foreach (query_all(
+            'SELECT s.id, s.full_name, s.enrollment_no, d.short_name
+             FROM students s
+             INNER JOIN departments d ON d.id = s.department_id
+             ORDER BY d.name ASC, s.semester_no ASC, s.full_name ASC'
+        ) as $student) {
+            $options[] = [
+                'role' => 'student',
+                'id' => (int) $student['id'],
+                'name' => (string) $student['full_name'],
+                'identifier' => (string) $student['enrollment_no'],
+                'label' => 'Student - ' . (string) $student['full_name'] . ' (' . (string) $student['enrollment_no'] . ', ' . (string) $student['short_name'] . ')',
+            ];
+        }
+    }
+
+    if ($requesterRole === 'student') {
+        $student = student_by_id($requesterId);
+        $params = [];
+        $sql = 'SELECT t.id, t.full_name, t.teacher_code, d.short_name
+                FROM teachers t
+                INNER JOIN departments d ON d.id = t.department_id
+                WHERE t.status = "approved"';
+        if ($student) {
+            $sql .= ' AND t.department_id = :department_id';
+            $params['department_id'] = (int) $student['department_id'];
+        }
+        $sql .= ' ORDER BY t.full_name ASC';
+
+        foreach (query_all($sql, $params) as $teacher) {
+            $options[] = [
+                'role' => 'teacher',
+                'id' => (int) $teacher['id'],
+                'name' => (string) $teacher['full_name'],
+                'identifier' => (string) $teacher['teacher_code'],
+                'label' => 'Faculty - ' . (string) $teacher['full_name'] . ' (' . (string) $teacher['teacher_code'] . ', ' . (string) $teacher['short_name'] . ')',
+            ];
+        }
+    }
+
+    foreach ($options as $index => $option) {
+        $options[$index]['value'] = $option['role'] . ':' . $option['id'];
+    }
+
+    return $options;
+}
+
+function support_feedback_target_from_value(string $value, array $options): array
+{
+    $value = trim($value);
+    foreach ($options as $option) {
+        if ((string) ($option['value'] ?? '') === $value) {
+            return $option;
+        }
+    }
+
+    throw new RuntimeException('Choose a valid recipient for this message.');
+}
+
+function submit_portal_feedback(string $category, string $requesterRole, array $requester, string $targetValue, string $subject, string $message): array
+{
+    $messageType = strtolower(trim($category));
+    if (!in_array($messageType, ['feedback', 'query', 'issue'], true)) {
+        throw new RuntimeException('Choose Feedback, Query, or Issue before sending.');
+    }
+    $category = $messageType === 'issue' ? 'issue' : 'feedback';
+
+    $requesterRole = strtolower(trim($requesterRole));
+    $requesterId = (int) ($requester['id'] ?? 0);
+    $options = support_feedback_target_options($requesterRole, $requesterId);
+    $target = support_feedback_target_from_value($targetValue, $options);
+    $subject = trim($subject);
+    $message = trim($message);
+
+    if ($subject === '') {
+        throw new RuntimeException('Enter a short subject for this message.');
+    }
+    if (strlen($subject) > 190) {
+        throw new RuntimeException('Subject must be 190 characters or less.');
+    }
+    if ($message === '') {
+        throw new RuntimeException('Write the feedback or issue details before sending.');
+    }
+
+    $requesterName = (string) ($requester['full_name'] ?? $requester['name'] ?? 'User');
+    $requesterIdentifier = (string) ($requester['teacher_code'] ?? $requester['enrollment_no'] ?? $requester['username'] ?? $requesterId);
+    $requesterEmail = (string) ($requester['email'] ?? '');
+
+    return create_support_request(
+        $category,
+        $messageType,
+        $requesterRole,
+        $requesterId,
+        $requesterName,
+        $requesterIdentifier,
+        $requesterEmail,
+        $subject,
+        $message,
+        null,
+        (string) $target['role'],
+        (int) $target['id'],
+        (string) $target['name'],
+        (string) $target['identifier']
+    );
+}
+
 function support_request_mailto_link(array $request): ?string
 {
     if (($request['category'] ?? null) !== 'request' || ($request['request_type'] ?? null) !== 'forgot_faculty_id') {
@@ -943,7 +1211,7 @@ function support_request_mailto_link(array $request): ?string
     return 'mailto:' . $email . '?subject=' . $subject . '&body=' . $body;
 }
 
-function approve_support_request(int $requestId, int $adminId): array
+function approve_support_request(int $requestId, int $adminId, ?string $adminResponse = null): array
 {
     $request = support_request_by_id($requestId);
     if (!$request) {
@@ -982,9 +1250,15 @@ function approve_support_request(int $requestId, int $adminId): array
              SET status = "approved",
                  reviewed_by_admin_id = :admin_id,
                  reviewed_at = NOW(),
+                 admin_response = :admin_response,
+                 requester_seen_at = NULL,
                  updated_at = NOW()
              WHERE id = :id',
-            ['admin_id' => $adminId, 'id' => $requestId]
+            [
+                'admin_id' => $adminId,
+                'admin_response' => trim((string) $adminResponse) !== '' ? trim((string) $adminResponse) : null,
+                'id' => $requestId,
+            ]
         );
         db()->commit();
     } catch (Throwable $exception) {
@@ -998,6 +1272,27 @@ function approve_support_request(int $requestId, int $adminId): array
         'request' => $approved,
         'mailto' => support_request_mailto_link($approved),
     ];
+}
+
+function respond_support_feedback(int $requestId, int $adminId, string $adminResponse): array
+{
+    $request = support_request_by_id($requestId);
+    if (!$request) {
+        throw new RuntimeException('Selected feedback or issue was not found.');
+    }
+    if (!in_array((string) ($request['category'] ?? ''), ['feedback', 'issue'], true)) {
+        throw new RuntimeException('This action is only available for feedback and issue records.');
+    }
+    if (($request['status'] ?? '') !== 'pending') {
+        throw new RuntimeException('This feedback or issue has already been reviewed.');
+    }
+
+    $adminResponse = trim($adminResponse);
+    if ($adminResponse === '') {
+        $adminResponse = 'Admin has reviewed your message and marked it as responded.';
+    }
+
+    return approve_support_request($requestId, $adminId, $adminResponse)['request'];
 }
 
 function reject_support_request(int $requestId, int $adminId): array
@@ -1015,9 +1310,15 @@ function reject_support_request(int $requestId, int $adminId): array
          SET status = "rejected",
              reviewed_by_admin_id = :admin_id,
              reviewed_at = NOW(),
+             admin_response = :admin_response,
+             requester_seen_at = NULL,
              updated_at = NOW()
          WHERE id = :id',
-        ['admin_id' => $adminId, 'id' => $requestId]
+        [
+            'admin_id' => $adminId,
+            'admin_response' => 'Admin has reviewed and closed this message.',
+            'id' => $requestId,
+        ]
     );
 
     return support_request_by_id($requestId) ?? $request;

@@ -8,6 +8,7 @@ DROP TABLE IF EXISTS attendance_sessions;
 DROP TABLE IF EXISTS holiday_events;
 DROP TABLE IF EXISTS password_reset_otps;
 DROP TABLE IF EXISTS admin_otp_requests;
+DROP TABLE IF EXISTS active_user_sessions;
 DROP TABLE IF EXISTS support_requests;
 DROP TABLE IF EXISTS mark_locks;
 DROP TABLE IF EXISTS mark_types;
@@ -93,6 +94,7 @@ CREATE TABLE subjects (
     department_id INT UNSIGNED NOT NULL,
     semester_no TINYINT UNSIGNED NOT NULL,
     subject_code VARCHAR(40) NOT NULL,
+    subject_short_name VARCHAR(80) DEFAULT NULL,
     subject_name VARCHAR(200) NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY uq_subject_name (department_id, semester_no, subject_name),
@@ -141,6 +143,20 @@ CREATE TABLE password_reset_otps (
     INDEX idx_password_reset_lookup (role_name, email, otp_code, consumed_at, expires_at)
 ) ENGINE=InnoDB;
 
+CREATE TABLE active_user_sessions (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    role_name ENUM('admin', 'teacher', 'student') NOT NULL,
+    user_id INT UNSIGNED NOT NULL,
+    session_key CHAR(64) NOT NULL,
+    login_ip VARCHAR(45) DEFAULT NULL,
+    user_agent VARCHAR(1000) DEFAULT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_seen_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_active_user_slot (role_name, user_id),
+    UNIQUE KEY uq_active_session_key (session_key),
+    INDEX idx_active_session_last_seen (last_seen_at)
+) ENGINE=InnoDB;
+
 CREATE TABLE support_requests (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     category ENUM('request', 'feedback', 'issue') NOT NULL DEFAULT 'request',
@@ -150,12 +166,18 @@ CREATE TABLE support_requests (
     requester_name VARCHAR(190) DEFAULT NULL,
     requester_identifier VARCHAR(80) DEFAULT NULL,
     requester_email VARCHAR(190) DEFAULT NULL,
+    target_role ENUM('admin', 'teacher', 'student') DEFAULT NULL,
+    target_id INT UNSIGNED DEFAULT NULL,
+    target_name VARCHAR(190) DEFAULT NULL,
+    target_identifier VARCHAR(80) DEFAULT NULL,
     subject_line VARCHAR(190) DEFAULT NULL,
     message_body TEXT DEFAULT NULL,
     requested_password_hash VARCHAR(255) DEFAULT NULL,
+    admin_response TEXT DEFAULT NULL,
     status ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
     reviewed_by_admin_id INT UNSIGNED DEFAULT NULL,
     reviewed_at DATETIME DEFAULT NULL,
+    requester_seen_at DATETIME DEFAULT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_support_requests_category_status (category, status),
@@ -280,13 +302,24 @@ CREATE TABLE audit_logs (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     role_name ENUM('admin', 'teacher', 'student', 'system') NOT NULL,
     user_identifier VARCHAR(150) NOT NULL,
+    actor_id INT UNSIGNED DEFAULT NULL,
+    actor_name VARCHAR(190) DEFAULT NULL,
+    actor_reference VARCHAR(190) DEFAULT NULL,
     ip_address VARCHAR(45) DEFAULT NULL,
     action_code VARCHAR(80) NOT NULL,
-    details VARCHAR(255) DEFAULT NULL,
+    details TEXT DEFAULT NULL
+    user_agent TEXT DEFAULT NULL,
+    request_method VARCHAR(10) DEFAULT NULL,
+    request_path VARCHAR(255) DEFAULT NULL,
+    referer VARCHAR(255) DEFAULT NULL,
+    forwarded_for VARCHAR(255) DEFAULT NULL,
+    accept_language VARCHAR(120) DEFAULT NULL,
+    session_fingerprint CHAR(64) DEFAULT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_audit_role_time (role_name, created_at),
     INDEX idx_audit_ip_time (ip_address, created_at),
-    INDEX idx_audit_action_time (action_code, created_at)
+    INDEX idx_audit_action_time (action_code, created_at),
+    INDEX idx_audit_actor_time (actor_name, created_at)
 ) ENGINE=InnoDB;
 
 

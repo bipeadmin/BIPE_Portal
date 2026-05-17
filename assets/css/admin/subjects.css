@@ -26,6 +26,33 @@
   margin-top: 16px;
 }
 
+.role-admin .subject-upload-mode-switch {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.role-admin .subject-upload-panel-stack {
+  display: grid;
+  gap: 16px;
+}
+
+.role-admin .subject-upload-panel[hidden] {
+  display: none !important;
+}
+
+.role-admin .subject-upload-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.role-admin .subject-upload-actions .btn-secondary,
+.role-admin .subject-upload-actions .btn-primary {
+  min-height: 46px;
+}
+
 .role-admin .subject-directory-wrap {
   max-height: clamp(420px, 64vh, 760px);
   overflow-x: auto;
@@ -89,6 +116,11 @@
   .role-admin .subject-filter-form .btn-primary {
     width: 100%;
     justify-content: center;
+  }
+
+  .role-admin .subject-upload-actions {
+    display: grid;
+    gap: 12px;
   }
 
   .role-admin .subject-upload-form,

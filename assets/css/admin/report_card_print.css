@@ -6,12 +6,13 @@
 .report-card-brand { display: flex; gap: 14px; align-items: center; }
 .report-card-brand img { width: 72px; height: 72px; object-fit: contain; }
 .report-card-brand h1 { font-size: 24px; }
-.report-card-brand p, .report-card-meta div, .summary-note { color: var(--muted); font-size: 13px; }
+.report-card-brand p, .report-card-meta div { color: var(--muted); font-size: 13px; }
 .report-card-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 18px; padding: 16px 0 18px; }
 .report-card-table-wrap { overflow: visible; }
 .report-card-table th, .report-card-table td { text-align: center; }
 .report-card-table th:first-child, .report-card-table td:first-child { text-align: left; }
-.report-card-table .table-note { font-size: 10px; color: rgba(255,255,255,.78); }
+.report-card-table .table-note,
+.summary-note { display: none !important; }
 .is-absent { color: var(--danger); font-weight: 600; }
 .grand-row td { background: rgba(37, 99, 235, 0.08); font-weight: 600; }
 .report-card-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 18px; }

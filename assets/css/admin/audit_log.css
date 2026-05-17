@@ -1,31 +1,276 @@
+.role-admin .audit-log-card,
+.role-admin .audit-entry-hero,
+.role-admin .audit-detail-card {
+  min-width: 0;
+}
+
+.role-admin .audit-log-head {
+  align-items: flex-start;
+  gap: 18px;
+}
+
+.role-admin .audit-log-intro {
+  max-width: 72ch;
+  margin: 8px 0 0;
+  line-height: 1.7;
+}
+
+.role-admin .audit-log-filters {
+  margin-bottom: 16px;
+}
+
 .role-admin .audit-log-wrap {
-  max-height: clamp(380px, 66vh, 780px);
+  max-height: clamp(420px, 68vh, 820px);
   overflow: auto;
   overscroll-behavior: contain;
-  scrollbar-gutter: stable;
+  scrollbar-gutter: stable both-edges;
+  border: 1px solid rgba(30, 64, 175, 0.1);
+  border-radius: 26px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.96));
+  box-shadow: 0 22px 45px rgba(15, 23, 42, 0.08);
 }
 
 .role-admin .audit-log-table {
   width: 100%;
-  min-width: 1060px;
-  table-layout: auto;
+  min-width: 1180px;
+  border-collapse: separate;
+  border-spacing: 0;
 }
 
-.role-admin .audit-log-table td {
+.role-admin .audit-log-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 18px 20px;
+  text-align: left;
+  font-family: 'Cinzel', serif;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--primary);
+  background: linear-gradient(180deg, rgba(236, 244, 255, 0.98), rgba(248, 250, 252, 0.98));
+  border-bottom: 1px solid rgba(30, 64, 175, 0.12);
+}
+
+.role-admin .audit-log-table tbody td {
+  padding: 18px 20px;
   vertical-align: top;
+  border-bottom: 1px solid rgba(30, 64, 175, 0.08);
   overflow-wrap: anywhere;
 }
 
+.role-admin .audit-log-row {
+  transition: background-color 160ms ease, transform 160ms ease;
+}
+
+.role-admin .audit-log-row:hover td {
+  background: rgba(239, 246, 255, 0.64);
+}
+
 .role-admin .audit-log-table td:nth-child(5) {
-  min-width: 180px;
+  min-width: 190px;
 }
 
 .role-admin .audit-log-table td:nth-child(6) {
-  min-width: 320px;
+  min-width: 360px;
 }
 
-.role-admin .audit-log-table .badge {
-  white-space: nowrap;
+.role-admin .audit-meta-line {
+  display: block;
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.role-admin .audit-actor-cell strong,
+.role-admin .audit-action-cell strong,
+.role-admin .audit-details-cell strong {
+  display: block;
+  font-weight: 600;
+}
+
+.role-admin .audit-role-link {
+  display: inline-flex;
+  text-decoration: none;
+}
+
+.role-admin .audit-role-link .badge {
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.role-admin .audit-role-link:hover .badge,
+.role-admin .audit-role-link:focus-visible .badge {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 18px rgba(37, 99, 235, 0.16);
+}
+
+.role-admin .audit-entry-grid {
+  display: grid;
+  gap: 20px;
+}
+
+.role-admin .audit-entry-hero {
+  padding: 26px 28px;
+  border: 1px solid rgba(30, 64, 175, 0.12);
+  background:
+    radial-gradient(circle at top right, rgba(59, 130, 246, 0.12), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(245, 248, 255, 0.96));
+  box-shadow: 0 26px 48px rgba(15, 23, 42, 0.08);
+}
+
+.role-admin .audit-entry-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.role-admin .audit-back-link {
+  flex-shrink: 0;
+}
+
+.role-admin .audit-entry-summary {
+  max-width: 84ch;
+  margin: 12px 0 0;
+  font-size: 15px;
+  line-height: 1.75;
+}
+
+.role-admin .audit-badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.role-admin .audit-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.role-admin .audit-kpi {
+  padding: 15px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(30, 64, 175, 0.1);
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.role-admin .audit-kpi strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.role-admin .audit-kpi-label,
+.role-admin .audit-raw-label,
+.role-admin .audit-section-title {
+  font-family: 'Cinzel', serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.role-admin .audit-kpi-label {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.role-admin .audit-kpi-meta {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.role-admin .audit-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+  gap: 18px;
+}
+
+.role-admin .audit-detail-card {
+  border: 1px solid rgba(30, 64, 175, 0.1);
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.06);
+}
+
+.role-admin .audit-section-title {
+  margin: 0 0 14px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.role-admin .audit-detail-list {
+  display: grid;
+  gap: 12px;
+}
+
+.role-admin .audit-detail-item {
+  padding: 13px 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(30, 64, 175, 0.08);
+  background: rgba(248, 250, 252, 0.82);
+}
+
+.role-admin .audit-detail-item strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+
+.role-admin .audit-detail-item p {
+  margin: 0;
+  line-height: 1.65;
+}
+
+.role-admin .audit-raw-card {
+  overflow: hidden;
+}
+
+.role-admin .audit-raw-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.role-admin .audit-raw-label {
+  margin: 0 0 8px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.role-admin .audit-raw-block {
+  margin: 0;
+  min-height: 148px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(15, 23, 42, 0.96);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  color: #e2e8f0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+@media (max-width: 960px) {
+  .role-admin .audit-entry-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .role-admin .audit-back-link {
+    width: 100%;
+  }
+
+  .role-admin .audit-meta-grid,
+  .role-admin .audit-raw-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 720px) {
@@ -35,16 +280,16 @@
   }
 
   .role-admin .card-head form,
+  .role-admin .card-head .btn-secondary,
   .role-admin .filters .btn-primary {
     width: 100%;
   }
 
   .role-admin .audit-log-wrap {
-    max-height: min(66vh, 620px);
+    max-height: min(70vh, 680px);
     overflow-y: auto;
     overflow-x: hidden;
-    border: none;
-    background: transparent;
+    border-radius: 22px;
   }
 
   .role-admin .audit-log-table,
@@ -62,6 +307,11 @@
     background: transparent;
   }
 
+  .role-admin .audit-log-table td:nth-child(5),
+  .role-admin .audit-log-table td:nth-child(6) {
+    min-width: 0;
+  }
+
   .role-admin .audit-log-table thead {
     display: none;
   }
@@ -69,26 +319,28 @@
   .role-admin .audit-log-table tbody {
     display: grid;
     gap: 14px;
+    padding: 12px;
   }
 
   .role-admin .audit-log-table tbody tr {
     overflow: hidden;
-    border: 1px solid rgba(30, 64, 175, 0.12);
+    border: 1px solid rgba(30, 64, 175, 0.1);
     border-radius: 20px;
     background: rgba(255, 255, 255, 0.95);
-    box-shadow: var(--shadow-sm);
+    box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
   }
 
-  .role-admin .audit-log-table td {
+  .role-admin .audit-log-table tbody td {
     display: grid;
-    grid-template-columns: minmax(108px, 42%) minmax(0, 1fr);
+    grid-template-columns: minmax(112px, 42%) minmax(0, 1fr);
     gap: 12px;
     align-items: start;
-    padding: 11px 14px;
+    padding: 12px 14px;
     border-bottom: 1px solid rgba(30, 64, 175, 0.08);
+    background: transparent;
   }
 
-  .role-admin .audit-log-table td:last-child {
+  .role-admin .audit-log-table tbody td:last-child {
     border-bottom: none;
   }
 
@@ -101,16 +353,212 @@
     color: var(--muted);
   }
 
-  .role-admin .audit-log-table td[data-label='Timestamp'] {
-    background: rgba(239, 246, 255, 0.72);
-  }
-
-  .role-admin .audit-log-table td[data-label='Details'] {
+  .role-admin .audit-log-table td[data-label='Summary'] {
     grid-template-columns: 1fr;
     gap: 8px;
   }
 
-  .role-admin .audit-log-table .badge {
-    justify-self: start;
+  .role-admin .audit-badge-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .role-admin .audit-entry-hero {
+    padding: 22px 20px;
+  }
+
+  .role-admin .audit-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.role-admin .audit-log-card,
+.role-admin .audit-log-wrap,
+.role-admin .audit-entry-grid,
+.role-admin .audit-entry-hero,
+.role-admin .audit-detail-card,
+.role-admin .audit-detail-list,
+.role-admin .audit-detail-item,
+.role-admin .audit-kpi,
+.role-admin .audit-raw-grid,
+.role-admin .audit-raw-grid > div {
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.role-admin .audit-entry-hero,
+.role-admin .audit-detail-card,
+.role-admin .audit-kpi,
+.role-admin .audit-detail-item {
+  overflow: hidden;
+}
+
+.role-admin .audit-log-table th,
+.role-admin .audit-log-table td,
+.role-admin .audit-entry-summary,
+.role-admin .audit-kpi strong,
+.role-admin .audit-kpi-meta,
+.role-admin .audit-detail-item strong,
+.role-admin .audit-detail-item p,
+.role-admin .audit-section-title,
+.role-admin .audit-meta-line,
+.role-admin .audit-details-cell strong,
+.role-admin .audit-action-cell strong,
+.role-admin .audit-actor-cell strong {
+  max-width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.role-admin .audit-kpi .mono,
+.role-admin .audit-detail-item .mono,
+.role-admin .audit-meta-line.mono {
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
+
+.role-admin .audit-raw-block {
+  max-width: 100%;
+  max-height: min(52vh, 430px);
+  overflow: auto;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+@media (max-width: 520px) {
+  .role-admin .audit-log-table tbody td {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .role-admin .audit-log-table td::before {
+    line-height: 1.4;
+  }
+
+  .role-admin .audit-entry-hero,
+  .role-admin .audit-detail-card {
+    border-radius: 22px;
+  }
+
+  .role-admin .audit-detail-item,
+  .role-admin .audit-kpi {
+    padding: 12px;
+    border-radius: 16px;
+  }
+}
+
+@media (min-width: 721px) {
+  .role-admin .audit-log-card {
+    padding: 22px 24px 26px;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.98)),
+      radial-gradient(circle at top right, rgba(59, 130, 246, 0.1), transparent 34%);
+  }
+
+  .role-admin .audit-log-wrap {
+    border-radius: 24px;
+    background: #fff;
+  }
+
+  .role-admin .audit-log-table {
+    min-width: 1080px;
+    table-layout: fixed;
+  }
+
+  .role-admin .audit-log-table th,
+  .role-admin .audit-log-table td {
+    word-break: normal;
+    overflow-wrap: break-word;
+  }
+
+  .role-admin .audit-log-table thead th {
+    padding: 15px 18px;
+    white-space: nowrap;
+    word-break: normal;
+    overflow-wrap: normal;
+  }
+
+  .role-admin .audit-log-table thead th:nth-child(1),
+  .role-admin .audit-log-table tbody td:nth-child(1) {
+    width: 124px;
+  }
+
+  .role-admin .audit-log-table thead th:nth-child(2),
+  .role-admin .audit-log-table tbody td:nth-child(2) {
+    width: 108px;
+  }
+
+  .role-admin .audit-log-table thead th:nth-child(3),
+  .role-admin .audit-log-table tbody td:nth-child(3) {
+    width: 180px;
+  }
+
+  .role-admin .audit-log-table thead th:nth-child(4),
+  .role-admin .audit-log-table tbody td:nth-child(4) {
+    width: 190px;
+  }
+
+  .role-admin .audit-log-table thead th:nth-child(5),
+  .role-admin .audit-log-table tbody td:nth-child(5) {
+    width: 170px;
+    min-width: 0;
+  }
+
+  .role-admin .audit-log-table tbody td {
+    padding: 16px 18px;
+  }
+
+  .role-admin .audit-log-table tbody tr:nth-child(even) td {
+    background: rgba(248, 250, 252, 0.6);
+  }
+
+  .role-admin .audit-log-table tbody td:nth-child(1) strong,
+  .role-admin .audit-log-table tbody td:nth-child(2),
+  .role-admin .audit-role-link,
+  .role-admin .audit-role-link .badge {
+    white-space: nowrap;
+    word-break: normal;
+    overflow-wrap: normal;
+  }
+
+  .role-admin .audit-role-link .badge {
+    display: inline-flex;
+    min-width: 72px;
+    justify-content: center;
+    padding: 8px 13px;
+    border-radius: 999px;
+    line-height: 1;
+  }
+
+  .role-admin .audit-actor-cell strong,
+  .role-admin .audit-action-cell strong,
+  .role-admin .audit-details-cell strong {
+    color: var(--heading, var(--text));
+    font-size: 15px;
+    line-height: 1.5;
+    word-break: normal;
+    overflow-wrap: break-word;
+  }
+
+  .role-admin .audit-meta-line {
+    font-size: 12px;
+    line-height: 1.55;
+  }
+
+  .role-admin .audit-meta-line.mono {
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+
+  .role-admin .audit-entry-hero,
+  .role-admin .audit-detail-card {
+    border-radius: 26px;
+  }
+
+  .role-admin .audit-detail-item {
+    display: grid;
+    gap: 4px;
   }
 }

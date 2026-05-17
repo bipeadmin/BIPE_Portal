@@ -1,17 +1,49 @@
+.role-admin .report-filter-card,
+.role-admin .report-detail-card,
 .role-admin .department-report-card,
-.role-admin .department-report-wrap {
+.role-admin .department-report-wrap,
+.role-admin .admin-report-detail-wrap {
   min-width: 0;
+}
+
+.role-admin .admin-reports-filter-form {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  align-items: end;
+}
+
+.role-admin .report-filter-actions {
+  display: flex;
+  align-items: flex-end;
+}
+
+.role-admin .report-filter-actions .btn-primary {
+  width: 100%;
+}
+
+.role-admin .report-filter-note {
+  margin-top: 12px;
+}
+
+.role-admin .report-detail-card .card-head,
+.role-admin .department-report-card .card-head {
+  align-items: flex-start;
+}
+
+.role-admin .admin-report-detail-table {
+  min-width: 1080px;
 }
 
 .role-admin .department-report-table {
   min-width: 860px;
 }
 
+.role-admin .admin-report-detail-table td,
 .role-admin .department-report-table td {
   overflow-wrap: anywhere;
   vertical-align: top;
 }
 
+.role-admin .admin-report-detail-table td strong,
 .role-admin .department-report-table td strong {
   display: block;
   font-weight: 600;
@@ -25,12 +57,20 @@
   font-family: 'JetBrains Mono', monospace;
 }
 
+@media (max-width: 900px) {
+  .role-admin .admin-reports-filter-form {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 720px) {
+  .role-admin .report-detail-card .card-head,
   .role-admin .department-report-card .card-head {
     flex-direction: column;
     align-items: flex-start;
   }
 
+  .role-admin .admin-report-detail-wrap,
   .role-admin .department-report-wrap {
     overflow-x: hidden;
     overflow-y: visible;
@@ -38,6 +78,12 @@
     background: transparent;
   }
 
+  .role-admin .admin-report-detail-table,
+  .role-admin .admin-report-detail-table thead,
+  .role-admin .admin-report-detail-table tbody,
+  .role-admin .admin-report-detail-table tr,
+  .role-admin .admin-report-detail-table th,
+  .role-admin .admin-report-detail-table td,
   .role-admin .department-report-table,
   .role-admin .department-report-table thead,
   .role-admin .department-report-table tbody,
@@ -49,15 +95,18 @@
     min-width: 0 !important;
   }
 
+  .role-admin .admin-report-detail-table thead,
   .role-admin .department-report-table thead {
     display: none;
   }
 
+  .role-admin .admin-report-detail-table tbody,
   .role-admin .department-report-table tbody {
     display: grid;
     gap: 12px;
   }
 
+  .role-admin .admin-report-detail-table tbody tr,
   .role-admin .department-report-table tbody tr {
     overflow: hidden;
     border: 1px solid rgba(30, 64, 175, 0.12);
@@ -66,9 +115,10 @@
     box-shadow: var(--shadow-sm);
   }
 
+  .role-admin .admin-report-detail-table td,
   .role-admin .department-report-table td {
     display: grid;
-    grid-template-columns: minmax(122px, 44%) minmax(0, 1fr);
+    grid-template-columns: minmax(128px, 44%) minmax(0, 1fr);
     gap: 12px;
     align-items: start;
     padding: 10px 14px;
@@ -76,10 +126,12 @@
     text-align: left;
   }
 
+  .role-admin .admin-report-detail-table td:last-child,
   .role-admin .department-report-table td:last-child {
     border-bottom: none;
   }
 
+  .role-admin .admin-report-detail-table td::before,
   .role-admin .department-report-table td::before {
     content: attr(data-label);
     font-family: 'Cinzel', serif;
@@ -89,6 +141,7 @@
     color: var(--muted);
   }
 
+  .role-admin .admin-report-detail-table td .badge,
   .role-admin .department-report-table td .badge {
     justify-self: start;
   }

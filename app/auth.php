@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-function admin_login(string $username, string $password): bool
+function admin_login(string $username, string $password): string|bool
 {
     $admin = query_one('SELECT * FROM admins WHERE username = :username LIMIT 1', ['username' => strtolower(trim($username))]);
 
@@ -9,12 +9,17 @@ function admin_login(string $username, string $password): bool
         return false;
     }
 
-    login_session([
+    $sessionUser = [
         'role' => 'admin',
         'id' => (int) $admin['id'],
         'name' => $admin['full_name'],
         'username' => $admin['username'],
-    ]);
+    ];
+
+    if (!login_session($sessionUser)) {
+        store_login_takeover_request($sessionUser);
+        return 'already_logged_in';
+    }
 
     return true;
 }
@@ -39,18 +44,23 @@ function teacher_login(string $teacherCode, string $password): string|bool
         return 'archived';
     }
 
-    login_session([
+    $sessionUser = [
         'role' => 'teacher',
         'id' => (int) $teacher['id'],
         'name' => $teacher['full_name'],
         'teacher_code' => $teacher['teacher_code'],
         'department_id' => (int) $teacher['department_id'],
-    ]);
+    ];
+
+    if (!login_session($sessionUser)) {
+        store_login_takeover_request($sessionUser);
+        return 'already_logged_in';
+    }
 
     return true;
 }
 
-function student_login(string $enrollment, string $password): bool
+function student_login(string $enrollment, string $password): string|bool
 {
     $student = query_one('SELECT * FROM students WHERE enrollment_no = :enrollment_no LIMIT 1', ['enrollment_no' => strtoupper(trim($enrollment))]);
 
@@ -58,15 +68,103 @@ function student_login(string $enrollment, string $password): bool
         return false;
     }
 
-    login_session([
+    $sessionUser = [
         'role' => 'student',
         'id' => (int) $student['id'],
         'name' => $student['full_name'],
         'enrollment_no' => $student['enrollment_no'],
         'department_id' => (int) $student['department_id'],
-    ]);
+    ];
+
+    if (!login_session($sessionUser)) {
+        store_login_takeover_request($sessionUser);
+        return 'already_logged_in';
+    }
 
     return true;
+}
+
+function admin_session_payload(int $adminId): ?array
+{
+    $admin = query_one('SELECT id, full_name, username FROM admins WHERE id = :id LIMIT 1', ['id' => $adminId]);
+    if (!$admin) {
+        return null;
+    }
+
+    return [
+        'role' => 'admin',
+        'id' => (int) $admin['id'],
+        'name' => (string) $admin['full_name'],
+        'username' => (string) $admin['username'],
+    ];
+}
+
+function teacher_session_payload(int $teacherId): ?array
+{
+    $teacher = query_one(
+        'SELECT id, full_name, teacher_code, department_id, status
+         FROM teachers
+         WHERE id = :id
+         LIMIT 1',
+        ['id' => $teacherId]
+    );
+    if (!$teacher || (string) ($teacher['status'] ?? '') !== 'approved') {
+        return null;
+    }
+
+    return [
+        'role' => 'teacher',
+        'id' => (int) $teacher['id'],
+        'name' => (string) $teacher['full_name'],
+        'teacher_code' => (string) $teacher['teacher_code'],
+        'department_id' => (int) $teacher['department_id'],
+    ];
+}
+
+function student_session_payload(int $studentId): ?array
+{
+    $student = query_one(
+        'SELECT id, full_name, enrollment_no, department_id
+         FROM students
+         WHERE id = :id
+         LIMIT 1',
+        ['id' => $studentId]
+    );
+    if (!$student) {
+        return null;
+    }
+
+    return [
+        'role' => 'student',
+        'id' => (int) $student['id'],
+        'name' => (string) $student['full_name'],
+        'enrollment_no' => (string) $student['enrollment_no'],
+        'department_id' => (int) $student['department_id'],
+    ];
+}
+
+function force_login_from_pending_request(string $role): bool
+{
+    $request = login_takeover_request($role);
+    if ($request === null) {
+        return false;
+    }
+
+    $userId = (int) ($request['user_id'] ?? 0);
+    $payload = match ($role) {
+        'admin' => admin_session_payload($userId),
+        'teacher' => teacher_session_payload($userId),
+        'student' => student_session_payload($userId),
+        default => null,
+    };
+
+    clear_login_takeover_request($role);
+
+    if ($payload === null) {
+        return false;
+    }
+
+    return login_session($payload, true);
 }
 
 function build_teacher_code(string $fullName, string $departmentCode): string

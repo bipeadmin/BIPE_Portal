@@ -54,6 +54,7 @@ function nav_items(string $role): array
             'students' => ['label' => 'Students', 'path' => 'admin/students.php'],
             'faculty' => ['label' => 'Faculty', 'path' => 'admin/faculty.php'],
             'requests' => ['label' => 'Requests', 'path' => 'admin/requests.php'],
+            'feedback' => ['label' => 'Feedback', 'path' => 'admin/feedback.php'],
             'attendance' => ['label' => 'Attendance', 'path' => 'admin/attendance.php'],
             'marks' => ['label' => 'Marks', 'path' => 'admin/marks.php'],
             'subjects' => ['label' => 'Subjects', 'path' => 'admin/subjects.php'],
@@ -73,6 +74,7 @@ function nav_items(string $role): array
             'view_marks' => ['label' => 'View Marks', 'path' => 'faculty/view_marks.php'],
             'assignments' => ['label' => 'Assignments', 'path' => 'faculty/assignments.php'],
             'reports' => ['label' => 'Reports', 'path' => 'faculty/reports.php'],
+            'feedback' => ['label' => 'Feedback', 'path' => 'faculty/feedback.php'],
             'profile' => ['label' => 'My Profile', 'path' => 'faculty/profile.php'],
         ],
         'student' => [
@@ -80,6 +82,7 @@ function nav_items(string $role): array
             'attendance' => ['label' => 'Attendance', 'path' => 'student/attendance.php'],
             'marks' => ['label' => 'Marks', 'path' => 'student/marks.php'],
             'assignments' => ['label' => 'Assignments', 'path' => 'student/assignments.php'],
+            'feedback' => ['label' => 'Feedback', 'path' => 'student/feedback.php'],
         ],
         default => [],
     };
@@ -89,7 +92,11 @@ function render_dashboard_layout(string $title, string $role, string $activeKey,
 {
     render_head($title, $pageCss, 'dashboard-body role-' . $role);
     $user = current_user();
-    $pendingSupportApprovals = $role === 'admin' ? support_request_pending_count() : 0;
+    $pendingRequestApprovals = $role === 'admin' ? support_request_pending_count(['request']) : 0;
+    $pendingFeedbackApprovals = $role === 'admin' ? support_request_pending_count(['feedback', 'issue']) : 0;
+    $pendingSenderResponses = in_array($role, ['teacher', 'student'], true)
+        ? support_request_unseen_response_count($role, (int) ($user['id'] ?? 0))
+        : 0;
     ?>
     <div class="sidebar-backdrop" data-sidebar-close></div>
     <div class="app-shell">
@@ -106,7 +113,17 @@ function render_dashboard_layout(string $title, string $role, string $activeKey,
             <nav class="sidebar-nav">
                 <?php foreach (nav_items($role) as $key => $item): ?>
                     <?php
-                    $hasPendingIndicator = $role === 'admin' && $key === 'requests' && $pendingSupportApprovals > 0;
+                    $pendingCount = 0;
+                    if ($role === 'admin' && $key === 'requests') {
+                        $pendingCount = $pendingRequestApprovals;
+                    }
+                    if ($role === 'admin' && $key === 'feedback') {
+                        $pendingCount = $pendingFeedbackApprovals;
+                    }
+                    if (in_array($role, ['teacher', 'student'], true) && $key === 'feedback') {
+                        $pendingCount = $pendingSenderResponses;
+                    }
+                    $hasPendingIndicator = $pendingCount > 0;
                     $linkClasses = ['sidebar-link'];
                     if ($key === $activeKey) {
                         $linkClasses[] = 'is-active';
@@ -115,7 +132,7 @@ function render_dashboard_layout(string $title, string $role, string $activeKey,
                         $linkClasses[] = 'has-pending-indicator';
                     }
                     ?>
-                    <a class="<?= e(implode(' ', $linkClasses)) ?>" href="<?= e(url($item['path'])) ?>"<?= $hasPendingIndicator ? ' aria-label="' . e($item['label'] . ' (' . $pendingSupportApprovals . ' pending approvals)') . '"' : '' ?>>
+                    <a class="<?= e(implode(' ', $linkClasses)) ?>" href="<?= e(url($item['path'])) ?>"<?= $hasPendingIndicator ? ' aria-label="' . e($item['label'] . ' (' . $pendingCount . ' pending)') . '"' : '' ?>>
                         <?= e($item['label']) ?>
                     </a>
                 <?php endforeach; ?>

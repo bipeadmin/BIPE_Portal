@@ -42,6 +42,16 @@ $csvStringFromRows = static function (array $header, array $rows): string {
     return $csv === false ? '' : $csv;
 };
 
+$excelCell = static fn (mixed $value): array => ['value' => $value];
+
+$excelMarksValue = static function (mixed $value): string|float {
+    return is_numeric($value) ? round((float) $value, 2) : (string) $value;
+};
+
+$excelPercentValue = static function (?float $value): string {
+    return $value !== null ? format_marks_value(round($value, 2)) . '%' : '--';
+};
+
 $buildDisplayRows = static function (int $departmentId, int $semesterNo, int $markTypeId): array {
     if ($markTypeId > 0) {
         $rows = class_mark_type_overview_rows($departmentId, $semesterNo, $markTypeId);
@@ -123,85 +133,109 @@ if (isset($_GET['export']) && $departmentId > 0) {
     }
 
     if ($exportType === 'all_csv_pack') {
-        if (!class_exists('ZipArchive')) {
-            throw new RuntimeException('ZipArchive is not available on this server. Install the PHP zip extension to export the organized CSV pack.');
-        }
-
-        $archivePath = tempnam(sys_get_temp_dir(), 'bipe_marks_pack_');
-        if ($archivePath === false) {
-            throw new RuntimeException('Unable to create a temporary archive file.');
-        }
-
-        $zip = new ZipArchive();
-        if ($zip->open($archivePath, ZipArchive::OVERWRITE) !== true) {
-            @unlink($archivePath);
-            throw new RuntimeException('Unable to create the organized marks archive.');
-        }
-
-        $filesAdded = 0;
+        $zipFiles = [];
         foreach ($departments as $department) {
             $exportDepartmentId = (int) $department['id'];
-            foreach (semester_numbers() as $exportSemesterNo) {
-                $subjects = subjects_for($exportDepartmentId, $exportSemesterNo);
-                foreach ($subjects as $subject) {
-                    $rows = subject_marks_export_rows($exportDepartmentId, $exportSemesterNo, (int) $subject['id']);
-                    if ($rows === []) {
-                        continue;
-                    }
+            $departmentFolder = $sanitizeFileSegment((string) ($department['name'] ?? 'Department'));
+            foreach ($markTypes as $markType) {
+                $markTypeIdForExport = (int) ($markType['id'] ?? 0);
+                if ($markTypeIdForExport <= 0) {
+                    continue;
+                }
 
-                    $sampleStudent = $rows[0]['student'] ?? [];
-                    $yearLevel = (int) ($sampleStudent['year_level'] ?? max(1, (int) ceil($exportSemesterNo / 2)));
-                    $header = ['Department', 'Year', 'Semester', 'Subject', 'Enrollment', 'Student Name'];
-                    foreach ($markTypes as $markType) {
-                        $header[] = (string) $markType['label'] . ' (/'. (string) $markType['max_marks'] . ')';
-                    }
-                    $header = array_merge($header, ['Total', 'Max', 'Grade', 'Result']);
+                $assessmentLabelForExport = (string) ($markType['label'] ?? ('Assessment ' . $markTypeIdForExport));
+                $assessmentMax = (float) ($markType['max_marks'] ?? 0);
+                $assessmentFolder = $sanitizeFileSegment($assessmentLabelForExport);
 
-                    $csvRows = [];
-                    foreach ($rows as $row) {
-                        $student = $row['student'];
-                        $csvRow = [
-                            (string) ($department['name'] ?? ''),
-                            year_label($yearLevel),
-                            semester_label($exportSemesterNo),
-                            (string) ($subject['subject_name'] ?? ''),
-                            (string) ($student['enrollment_no'] ?? ''),
-                            (string) ($student['full_name'] ?? ''),
-                        ];
-                        foreach ((array) ($row['cells'] ?? []) as $cell) {
-                            $csvRow[] = (string) ($cell['display'] ?? '--');
+                for ($yearLevel = 1; $yearLevel <= 3; $yearLevel++) {
+                    $worksheetRows = [
+                        [$excelCell('Department'), $excelCell((string) ($department['name'] ?? ''))],
+                        [$excelCell('Assessment'), $excelCell($assessmentLabelForExport)],
+                        [$excelCell('Year'), $excelCell(year_label($yearLevel))],
+                        [],
+                    ];
+                    $yearHasRows = false;
+
+                    foreach (semester_numbers() as $exportSemesterNo) {
+                        if (max(1, (int) ceil($exportSemesterNo / 2)) !== $yearLevel) {
+                            continue;
                         }
-                        $csvRow[] = (string) ($row['total'] ?? 0);
-                        $csvRow[] = (string) ($row['max'] ?? 0);
-                        $csvRow[] = (string) ($row['grade'] ?? '-');
-                        $csvRow[] = (string) ($row['result'] ?? 'Pending');
-                        $csvRows[] = $csvRow;
+
+                        $matrix = class_report_card_matrix_rows($exportDepartmentId, $exportSemesterNo, $markTypeIdForExport);
+                        $subjects = (array) ($matrix['subjects'] ?? []);
+                        $rows = (array) ($matrix['rows'] ?? []);
+                        if ($subjects === [] || $rows === []) {
+                            continue;
+                        }
+
+                        $semesterMax = $assessmentMax > 0 ? $assessmentMax * count($subjects) : 0.0;
+                        $worksheetRows[] = [$excelCell(semester_label($exportSemesterNo))];
+                        $header = ['Enrollment Number', 'Student Name', 'Semester'];
+                        foreach ($subjects as $subject) {
+                            $header[] = (string) ($subject['subject_name'] ?? 'Subject');
+                        }
+                        $header = array_merge($header, ['Total Marks', 'Maximum Marks', 'Percentage', 'Result']);
+                        $worksheetRows[] = array_map($excelCell, $header);
+
+                        foreach ($rows as $row) {
+                            $student = (array) ($row['student'] ?? []);
+                            $totalMarks = ($row['total_marks'] ?? null) !== null ? (float) $row['total_marks'] : null;
+                            $percentage = $totalMarks !== null && $semesterMax > 0 ? ($totalMarks / $semesterMax) * 100 : null;
+                            $result = $percentage !== null ? pass_fail_from_marks($percentage, 100.0) : 'Pending';
+                            $dataRow = [
+                                $excelCell((string) ($student['enrollment_no'] ?? '')),
+                                $excelCell((string) ($student['full_name'] ?? '')),
+                                $excelCell(semester_label($exportSemesterNo)),
+                            ];
+
+                            foreach ((array) ($row['subject_cells'] ?? []) as $subjectCell) {
+                                $marks = ($subjectCell['average_marks'] ?? null) !== null
+                                    ? $excelMarksValue((float) $subjectCell['average_marks'])
+                                    : (string) ($subjectCell['display'] ?? '--');
+                                $dataRow[] = $excelCell($marks);
+                            }
+
+                            $dataRow[] = $excelCell($totalMarks !== null ? $excelMarksValue($totalMarks) : (string) ($row['total_display'] ?? '--'));
+                            $dataRow[] = $excelCell($semesterMax > 0 ? round($semesterMax, 2) : '--');
+                            $dataRow[] = $excelCell($excelPercentValue($percentage));
+                            $dataRow[] = $excelCell($result);
+                            $worksheetRows[] = $dataRow;
+                            $yearHasRows = true;
+                        }
+
+                        $worksheetRows[] = [];
                     }
 
-                    $archiveEntry = $sanitizeFileSegment((string) ($department['name'] ?? 'Department'))
-                        . '/'
-                        . $sanitizeFileSegment(year_label($yearLevel) . ' ' . semester_label($exportSemesterNo))
-                        . '/'
-                        . $sanitizeFileSegment((string) ($subject['subject_name'] ?? 'Subject'))
-                        . '.csv';
+                    if (!$yearHasRows) {
+                        $worksheetRows[] = [$excelCell('No marks data available for ' . year_label($yearLevel) . '.')];
+                    }
 
-                    $zip->addFromString($archiveEntry, $csvStringFromRows($header, $csvRows));
-                    $filesAdded++;
+                    $archiveEntry = $departmentFolder
+                        . '/'
+                        . $assessmentFolder
+                        . '/'
+                        . $sanitizeFileSegment(year_label($yearLevel))
+                        . '.xlsx';
+
+                    $zipFiles[$archiveEntry] = binary_zip_archive(xlsx_package_files([[
+                        'name' => year_label($yearLevel),
+                        'columns' => [150, 240, 120, 180, 180, 180, 180, 180, 120, 130, 120, 110],
+                        'rows' => $worksheetRows,
+                    ]]));
                 }
             }
         }
 
-        if ($filesAdded === 0) {
-            $zip->addFromString('README.txt', "No subject-wise student marks were available to export at the time of generation.\n");
+        if ($zipFiles === []) {
+            $zipFiles['README.txt'] = "No assessment-wise student marks were available to export at the time of generation.\n";
         }
 
-        $zip->close();
-
         header('Content-Type: application/zip');
-        header('Content-Disposition: attachment; filename="organized_marks_csv_pack.zip"');
-        header('Content-Length: ' . (string) filesize($archivePath));
-        readfile($archivePath);
-        @unlink($archivePath);
+        header('Content-Disposition: attachment; filename="organized_marks_excel_pack.zip"');
+        header('Pragma: public');
+        header('Expires: 0');
+
+        echo binary_zip_archive($zipFiles);
         exit;
     }
 }
@@ -233,7 +267,7 @@ render_dashboard_layout('Marks Management', 'admin', 'marks', 'admin/marks.css',
         <article class="stat-card"><p class="eyebrow">Mark Entry</p><h3 class="stat-value"><?= e($isLocked ? 'Locked' : 'Open') ?></h3><p class="stat-label">Current admin control for this section</p></article>
     </section>
 
-    <article class="data-card">
+    <article class="data-card admin-marks-filter-card">
         <div class="card-head admin-marks-head">
             <div>
                 <p class="eyebrow">Class Filters</p>
@@ -247,10 +281,10 @@ render_dashboard_layout('Marks Management', 'admin', 'marks', 'admin/marks.css',
             </div>
             <div class="admin-marks-export-actions">
                 <a class="btn-secondary" href="<?= e(url('admin/marks.php?department_id=' . $departmentId . '&semester_no=' . $semesterNo . '&mark_type_id=' . $markTypeId . '&export=current_csv')) ?>">Download Current View</a>
-                <a class="btn-secondary" href="<?= e(url('admin/marks.php?department_id=' . $departmentId . '&semester_no=' . $semesterNo . '&mark_type_id=' . $markTypeId . '&export=all_csv_pack')) ?>">Download Organized CSV Pack</a>
+                <a class="btn-secondary" href="<?= e(url('admin/marks.php?department_id=' . $departmentId . '&semester_no=' . $semesterNo . '&mark_type_id=' . $markTypeId . '&export=all_csv_pack')) ?>">Download Organized Excel Pack</a>
             </div>
         </div>
-        <form method="get" class="filters admin-marks-filter-form" style="margin-bottom:14px">
+        <form method="get" class="filters admin-marks-filter-form">
             <div class="form-group">
                 <label class="form-label" for="marks-admin-department">Department</label>
                 <select class="form-select" id="marks-admin-department" name="department_id">
@@ -279,7 +313,7 @@ render_dashboard_layout('Marks Management', 'admin', 'marks', 'admin/marks.css',
             <button class="btn-primary" type="submit">Load</button>
         </form>
 
-        <form method="post" class="inline-actions" style="margin-bottom:16px">
+        <form method="post" class="inline-actions admin-marks-lock-actions">
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="toggle_lock">
             <input type="hidden" name="department_id" value="<?= e((string) $departmentId) ?>">
@@ -309,7 +343,8 @@ render_dashboard_layout('Marks Management', 'admin', 'marks', 'admin/marks.css',
                     </tr>
                     </thead>
                     <tbody>
-                    <?php foreach ($rows as $row):
+                    <?php foreach ($rows as $row): ?>
+                        <?php
                         $student = $row['student'];
                         $gradeTone = ($row['grade'] ?? '-') === 'F' ? 'danger' : (($row['grade'] ?? '-') === 'O' ? 'info' : 'success');
                         $result = (string) ($row['result'] ?? 'Pending');

@@ -28,6 +28,26 @@
     semesterSelect.addEventListener('change', syncYearFromSemester);
   };
 
-  bindClassPair('subject-upload-year', 'subject-upload-semester', false);
+  const uploadModeSelect = document.querySelector('[data-subject-upload-mode]');
+  const uploadPanels = Array.from(document.querySelectorAll('[data-subject-upload-panel]'));
+
+  const syncUploadMode = () => {
+    if (!uploadModeSelect || uploadPanels.length === 0) {
+      return;
+    }
+
+    const activeMode = uploadModeSelect.value === 'single' ? 'single' : 'bulk';
+    uploadPanels.forEach((panel) => {
+      panel.hidden = panel.dataset.subjectUploadPanel !== activeMode;
+    });
+  };
+
+  if (uploadModeSelect) {
+    uploadModeSelect.addEventListener('change', syncUploadMode);
+    syncUploadMode();
+  }
+
+  bindClassPair('subject-single-upload-year', 'subject-single-upload-semester', false);
+  bindClassPair('subject-bulk-upload-year', 'subject-bulk-upload-semester', false);
   bindClassPair('subject-filter-year', 'subject-filter-semester', true);
 })();
